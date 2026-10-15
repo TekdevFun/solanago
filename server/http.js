@@ -8,6 +8,8 @@ import crypto from 'node:crypto';
 import zlib from 'node:zlib';
 import { pipeline } from 'node:stream';
 import { GameError, soon } from './game.js';
+import { placeName } from './geocode.js';
+import { WORLD_PLACES } from './places.js';
 
 const TYPES = {
   '.html': 'text/html; charset=utf-8',
@@ -318,6 +320,13 @@ export function createServer({ game, cfg, log = console }) {
     const end = url.pathname.match(/^\/api\/admin\/batches\/(\d{1,15})\/end$/);
     if (end && req.method === 'POST') return send(res, 200, { ok: game.endBatch(Number(end[1])) });
     if (route === 'POST /api/admin/auto') return send(res, 200, { ok: true, auto: game.setAuto(await readJson(req)) });
+    if (route === 'GET /api/admin/places') return send(res, 200, { places: WORLD_PLACES });
+    if (route === 'GET /api/admin/place') {
+      // a name for the spot under the circle, so the admin does not have to type one
+      if (!limiter.allow('geocode', 60, 60_000)) return send(res, 200, { name: '' });
+      const name = await placeName(num(url.searchParams.get('lat')), num(url.searchParams.get('lng')), { tileUrl: cfg.tileUrl });
+      return send(res, 200, { name });
+    }
     if (route === 'POST /api/admin/pause') return send(res, 200, { ok: true, paused: game.setPaused((await readJson(req)).paused === true) });
     throw new GameError('not_found', 'No such endpoint.', { status: 404 });
   }

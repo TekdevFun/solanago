@@ -353,3 +353,66 @@ a{color:inherit}
 @media (prefers-reduced-motion:reduce){.tmap img.tile{transition:none}.hold.busy .hold-c{animation:none}}
 
 .cta:disabled{opacity:.6}
+
+/* ---------- theme: midnight purple ----------
+   Near-black with the coin's purple-to-green running through it. These rules come last so they win over the light
+   ones above, which are kept for reference. */
+:root{
+  --stage-a:#1c1333;--stage-b:#07060c;--stage-ink:#f4f2ff;--stage-dim:#a39dc2;--stage-chip:rgba(255,255,255,.08);
+  --device-shadow:0 44px 90px rgba(0,0,0,.65),0 0 0 1px rgba(255,255,255,.08),0 0 90px rgba(153,69,255,.16);
+  --surface:#0d0b17;--card:#161330;--well:#221e40;--line:rgba(255,255,255,.08);
+  --ink:#f4f2ff;--ink-2:#a9a4c6;--ink-3:#736e93;
+  --accent:#a46bff;--accent-hi:#b57fff;--accent-lo:#8a4af0;--accent-soft:rgba(153,69,255,.2);--on-accent:#ffffff;
+  --good:#14f195;--good-soft:rgba(20,241,149,.14);--gold:#ffc53d;--gold-soft:rgba(255,197,61,.16);--gold-ink:#ffd36b;
+  --bad:#ff6b6b;--bad-soft:rgba(255,107,107,.16);
+  --map-land:#13111f;--map-road:#2b2843;--map-park:#173a24;--map-water:#14304b;--map-rail:#3b3856;--map-text:#8f8ab0;--map-park-text:#73b27f;--map-station:#a7a2c4;
+  --ar-top:#101d16;--ar-mid:#2f5c3c;--ar-low:#14301d;
+  --glow:rgba(153,69,255,.45);--edge:#1f1b3a;
+  color-scheme:dark;
+}
+:root:not([data-theme="light"]),:root[data-theme="dark"]{--stage-a:#1c1333;--stage-b:#07060c}
+.phone{color-scheme:dark;background:var(--surface);color:var(--ink)}
+.cta{background:linear-gradient(90deg,#9945ff,#14f195);color:#fff;text-shadow:0 1px 2px rgba(0,0,0,.3);box-shadow:0 12px 30px rgba(153,69,255,.35),inset 0 1px 0 rgba(255,255,255,.25)}
+.cta[aria-disabled="true"]{background:var(--well);color:var(--ink-2);text-shadow:none;box-shadow:none}
+.rbtn{background:var(--card);color:var(--ink);border:1px solid var(--line);box-shadow:0 6px 18px rgba(0,0,0,.4)}
+.coin{filter:drop-shadow(0 2px 6px rgba(0,0,0,.55))}
+.logo{filter:drop-shadow(0 0 14px var(--glow))}
+.home-glow{background:radial-gradient(75% 100% at 50% 0%,rgba(153,69,255,.42),rgba(153,69,255,0) 72%)}
+.tag{background:rgba(255,255,255,.08);color:var(--ink-2)}
+.alert,.act,.camp,.list,.flow,.perks,.camp-pill,.psheet,.fsheet,.dial,.chip-in,.zlabel,.mapnote{border:1px solid var(--line);box-shadow:inset 0 1px 0 rgba(255,255,255,.04),0 10px 30px rgba(0,0,0,.38)}
+.alert{border-color:rgba(153,69,255,.5);box-shadow:inset 0 1px 0 rgba(255,255,255,.05),0 0 0 1px rgba(153,69,255,.12),0 10px 30px rgba(153,69,255,.16)}
+.perks{border-color:rgba(153,69,255,.5);box-shadow:inset 0 1px 0 rgba(255,255,255,.05),0 0 0 1px rgba(153,69,255,.12),0 0 32px rgba(153,69,255,.18)}
+.act-i{color:#c9a6ff}
+.bar{background:rgba(255,255,255,.08)}
+.wchip{background:var(--well);color:var(--ink);border:1px solid var(--line)}
+.wchip.none{background:linear-gradient(90deg,#9945ff,#14f195);color:#fff;border:0}
+.getbtn{background:linear-gradient(90deg,rgba(153,69,255,.28),rgba(20,241,149,.18));border:1px solid rgba(153,69,255,.45);color:var(--ink)}
+.input{background:var(--well)}
+.tierchip{background:rgba(255,255,255,.08)}
+.pin-c{box-shadow:0 0 0 2px var(--edge),0 2px 8px rgba(0,0,0,.55)}
+.pin--l .pin-c{box-shadow:0 0 0 2.5px var(--edge),0 4px 14px rgba(0,0,0,.6)}
+.pin--gold .pin-c{box-shadow:0 0 0 2px var(--edge),0 0 0 4.5px var(--gold),0 3px 9px rgba(0,0,0,.55)}
+.pin-l{background:var(--edge);color:var(--ink);border:1px solid var(--line);box-shadow:0 1px 4px rgba(0,0,0,.5)}
+.pin--l .pin-l,.pin.sel .pin-l{background:var(--ink);color:var(--surface);border-color:transparent}
+.pin-k{background:var(--ink);color:var(--surface);box-shadow:0 0 0 1.5px var(--edge)}
+.pin--l::before,.pin.sel::before,.pin.sel::after{background:rgba(153,69,255,.16);border-color:rgba(165,110,255,.6)}
+.medot .cone{background:conic-gradient(from -34deg,rgba(164,107,255,0),rgba(164,107,255,.55) 34deg,rgba(164,107,255,0) 68deg)}
+.medot .dot{border-color:var(--ink);box-shadow:0 2px 12px rgba(153,69,255,.75)}
+.orb::before,.orb::after{border-color:rgba(165,110,255,.6);background:rgba(153,69,255,.14)}
+.m-zone,.z-circle{fill:rgba(153,69,255,.16)}
+.b-zone{fill:rgba(153,69,255,.08);stroke:#b07cff}
+.b-zone.soon{fill:rgba(255,255,255,.03);stroke:var(--ink-3)}
+.mini-coin{box-shadow:0 0 0 2px var(--edge),0 2px 6px rgba(0,0,0,.55)}
+.attr{background:rgba(13,11,23,.78);color:var(--ink-3)}
+.scrim{background:rgba(0,0,0,.6)}
+.sheet{box-shadow:0 -10px 40px rgba(0,0,0,.55);border-top:1px solid var(--line)}
+.toast{background:rgba(34,30,64,.97);color:#fff;border:1px solid var(--line)}
+.f-coin{filter:drop-shadow(0 8px 22px rgba(0,0,0,.6)) drop-shadow(0 0 18px var(--glow))}
+.hold .trk{fill:rgba(255,255,255,.1)}
+.needle{border-top-color:var(--ink)}
+.tmap.darken .tiles{filter:invert(1) hue-rotate(185deg) brightness(.76) contrast(1.02) saturate(.62)}
+.tmap:not(.darken) .tiles{filter:none}
+.sh-top .rbtn{background:var(--well)}
+.ar-bg{background:radial-gradient(62% 30% at 50% 45%,rgba(120,190,120,.5),rgba(120,190,120,0) 72%),linear-gradient(180deg,var(--ar-top) 0%,#1c3b27 22%,var(--ar-mid) 46%,#275035 66%,var(--ar-low) 100%)}
+.ar-path{opacity:.45}
+

@@ -10,6 +10,9 @@ import { inTransaction, isUniqueViolation } from './store.js';
 const MINUTE = 60_000;
 const HOUR = 3_600_000;
 const MAX_DROPS_PER_BATCH = 5000;
+const MAX_DROPS_PER_RUN = 5000; // the schedule hides at most this many drops in one go
+const MAX_PLACES = 3000; // places the schedule can rotate through
+const BATCHES_SHOWN = 30; // how many batches a phone is told about at once: the nearest ones
 const DEVICE_ID = /^[A-Za-z0-9_-]{8,64}$/; // the random id a phone makes for itself
 const PASTE_HINT = 'Paste the address shown at the top of your wallet app.';
 const NOT_A_WALLET = {
@@ -403,9 +406,16 @@ export class Game {
 
   /* ---------- batches ---------- */
 
-  /** Splits an amount into small, mid and big drops (45% / 45% / 10% of the value), or uses explicit counts. */
-  planDrops({ totalLamports, counts, goldShare = 0 }) {
-    const v = this.cfg.tierValues;
+  /**
+   * Splits an amount into small, mid and big drops (45% / 45% / 10% of the value), or uses explicit counts.
+   * With `dropLamports`, every drop is that size whatever its tier (the schedule hides same-sized drops).
+   */
+  planDrops({ totalLamports, counts, goldShare = 0, dropLamports }) {
+    let v = this.cfg.tierValues;
+    if (dropLamports !== undefined) {
+      if (!Number.isSafeInteger(dropLamports) || dropLamports < 1_000_000 || dropLamports > 1000e9) throw new GameError('bad_batch', 'A drop must be between 0.001 and 1,000 SOL.');
+      v = { s: dropLamports, m: dropLamports, l: dropLamports };
+    }
     let n;
     if (counts && typeof counts === 'object') {
       n = { s: clampInt(counts.s, 0, MAX_DROPS_PER_BATCH, 0), m: clampInt(counts.m, 0, MAX_DROPS_PER_BATCH, 0), l: clampInt(counts.l, 0, MAX_DROPS_PER_BATCH, 0) };
@@ -451,7 +461,8 @@ export class Game {
     const counts = input.counts && typeof input.counts === 'object' ? input.counts : null;
     const totalLamports = input.totalSol !== undefined ? Math.round(numOf(input.totalSol) * 1e9) : undefined;
     if (!counts && !(totalLamports > 0)) throw new GameError('bad_batch', 'Enter how much SOL to hide.');
-    const plan = this.planDrops({ totalLamports, counts, goldShare: numOf(input.goldShare) || 0 });
+    const dropLamports = input.dropLamports === undefined ? undefined : Math.round(numOf(input.dropLamports));
+    const plan = this.planDrops({ totalLamports, counts, goldShare: numOf(input.goldShare) || 0, dropLamports });
     if (!plan.drops.length) throw new GameError('bad_batch', `That is too little for even one drop. The smallest drop is ${solString(this.cfg.tierValues.s)} SOL.`);
     if (!skipFundsCheck) {
       const free = this.available();
@@ -490,6 +501,32 @@ export class Game {
       earlyMin: b.early_min, onePerPerson: !!b.one_per_person, source: b.source, status: b.status, totalLamports: b.total_lamports,
       drops: c.total, left: c.hidden, claimed: c.claimed, claimedLamports: c.claimedLamports, gold: c.gold,
     };
+  }
+
+  /**
+   * Hides more drops in a batch that is already running (the schedule tops up a place's batch instead of starting
+   * a new one every run). `visibleAt` is when everyone may see the new drops; holders see them right away.
+   */
+  addDrops(batchId, { count, lamports, goldShare = 0, visibleAt }) {
+    const now = this.now();
+    const b = this.sql('SELECT * FROM batches WHERE id = ?').get(batchId);
+    if (!b || b.status !== 'live' || b.ends_at <= now) throw new GameError('bad_batch', 'That batch is not running.');
+    const plan = this.planDrops({ counts: { m: count }, goldShare, dropLamports: lamports });
+    if (!plan.drops.length) throw new GameError('bad_batch', 'Nothing to add.');
+    const free = this.available();
+    if (free === null || !Number.isFinite(free)) throw new GameError('funds', 'The treasury balance is not known yet. Try again in a minute.', { status: 503 });
+    if (!(plan.total <= free)) throw new GameError('funds', `The treasury has ${solString(Math.max(0, free))} SOL free. These drops need ${solString(plan.total)}.`, { available: free });
+    const at = Number.isFinite(visibleAt) && visibleAt > now ? Math.round(visibleAt) : null;
+    inTransaction(this.db, () => {
+      const insert = this.sql('INSERT INTO drops(batch_id, lat, lng, lamports, tier, gold, visible_at) VALUES (?, ?, ?, ?, ?, ?, ?)');
+      for (const d of plan.drops) {
+        const p = randomInCircle(b, b.radius_m, this.random);
+        insert.run(b.id, p.lat, p.lng, d.lamports, d.tier, d.gold, at);
+      }
+      this.sql('UPDATE batches SET total_lamports = total_lamports + ? WHERE id = ?').run(plan.total, b.id);
+    });
+    this.log.info(`batch ${b.id} "${b.name}": ${plan.drops.length} more drops, ${solString(plan.total)} SOL`);
+    return this.batchSummary(b.id);
   }
 
   /** Ends a batch now. Drops nobody found go back to the free balance. */
@@ -538,29 +575,31 @@ export class Game {
     if (typeof device !== 'string' || !DEVICE_ID.test(device)) device = ''; // anything else is not one of our phones: nothing is remembered for it
     if (here && device) this.recordPing(device, lat, lng, acc);
     const reach = this.reachFor(tier);
+    const live = this.sql(
+      `SELECT b.*, COUNT(d.id) AS total, COALESCE(SUM(d.status = 'hidden'), 0) AS hidden
+       FROM batches b LEFT JOIN drops d ON d.batch_id = b.id WHERE b.status = 'live' AND b.ends_at > ? GROUP BY b.id ORDER BY b.starts_at`,
+    ).all(now);
+    const byId = new Map();
     const open = new Set();
-    const batches = [];
-    for (const b of this.sql(`SELECT * FROM batches WHERE status = 'live' AND ends_at > ? ORDER BY starts_at`).all(now)) {
-      const opensAt = tier >= 1 ? b.starts_at - b.early_min * MINUTE : b.starts_at;
-      const isOpen = now >= opensAt;
-      if (isOpen) open.add(b.id);
-      const c = this.sql(`SELECT COUNT(*) AS total, COALESCE(SUM(status = 'hidden'), 0) AS hidden FROM drops WHERE batch_id = ?`).get(b.id);
-      batches.push({
-        id: b.id, name: b.name, area: b.area, lat: b.lat, lng: b.lng, radiusM: b.radius_m, startsAt: b.starts_at, endsAt: b.ends_at,
-        opensAt, open: isOpen, early: isOpen && now < b.starts_at, totalLamports: b.total_lamports, drops: c.total, left: c.hidden,
-        source: b.source, onePerPerson: !!b.one_per_person, distM: here ? Math.round(distanceM(here, b)) : null,
-        done: !!b.one_per_person && this.hasClaimedIn(b.id, address, device),
-      });
+    for (const b of live) {
+      b.opensAt = tier >= 1 ? b.starts_at - b.early_min * MINUTE : b.starts_at;
+      b.distM = here ? distanceM(here, b) : null;
+      byId.set(b.id, b);
+      if (now >= b.opensAt) open.add(b.id);
     }
     const drops = [];
+    const wanted = new Set(); // batches a drop below belongs to: always told about
     if (here && open.size) {
       const maxM = cfg.nearbyKm * 1000;
       const box = boundingBox(here, maxM);
       const rows = this.sql(
-        `SELECT id, batch_id, lat, lng, lamports, tier, gold FROM drops WHERE status = 'hidden' AND lat BETWEEN ? AND ? AND lng BETWEEN ? AND ?`,
+        `SELECT id, batch_id, lat, lng, lamports, tier, gold, visible_at FROM drops WHERE status = 'hidden' AND lat BETWEEN ? AND ? AND lng BETWEEN ? AND ?`,
       ).all(box.minLat, box.maxLat, box.minLng, box.maxLng);
       for (const d of rows) {
-        if (!open.has(d.batch_id)) continue;
+        const b = byId.get(d.batch_id);
+        if (!b || !open.has(b.id)) continue;
+        // a drop added to a running batch has a time of its own; holders get the same head start on it
+        if (d.visible_at !== null && now < (tier >= 1 ? d.visible_at - b.early_min * MINUTE : d.visible_at)) continue;
         const trueDist = distanceM(here, d);
         if (trueDist > maxM) continue;
         const exact = trueDist <= reach + 8;
@@ -568,12 +607,24 @@ export class Game {
         drops.push({
           id: d.id, b: d.batch_id, lat: round6(shown.lat), lng: round6(shown.lng), exact, lamports: d.lamports, tier: d.tier,
           gold: !!d.gold, locked: !!d.gold && tier < cfg.goldTier, dist: Math.round(exact ? trueDist : distanceM(here, shown)),
+          early: d.visible_at !== null && now < d.visible_at,
         });
+        wanted.add(d.batch_id);
       }
       drops.sort((a, b) => a.dist - b.dist);
       drops.length = Math.min(drops.length, 300);
     }
-    return { now, reach, tier, paused: this.paused, batches, drops };
+    // A phone is told about the nearest batches (the newest ones when it has no location), plus any its drops belong to.
+    const ranked = here ? [...live].sort((a, b) => a.distM - b.distM) : [...live].reverse();
+    const chosen = ranked.filter((b, i) => i < BATCHES_SHOWN || wanted.has(b.id));
+    chosen.sort((a, b) => a.starts_at - b.starts_at);
+    const batches = chosen.map((b) => ({
+      id: b.id, name: b.name, area: b.area, lat: b.lat, lng: b.lng, radiusM: b.radius_m, startsAt: b.starts_at, endsAt: b.ends_at,
+      opensAt: b.opensAt, open: open.has(b.id), early: open.has(b.id) && now < b.starts_at, totalLamports: b.total_lamports, drops: b.total, left: b.hidden,
+      source: b.source, onePerPerson: !!b.one_per_person, distM: b.distM === null ? null : Math.round(b.distM),
+      done: !!b.one_per_person && this.hasClaimedIn(b.id, address, device),
+    }));
+    return { now, reach, tier, paused: this.paused, batches, drops, liveBatches: live.length };
   }
 
   /* ---------- claiming ---------- */
@@ -620,8 +671,9 @@ export class Game {
     }
     if (this.paused) throw new GameError('paused', 'Claims are paused for a moment. This drop is not going anywhere, try again soon.', { status: 503 });
     if (drop.batch_status !== 'live' || now >= drop.ends_at) throw new GameError('not_live', 'This batch has ended.', { status: 410 });
-    // Before the head start begins, nobody can claim, whatever they hold.
-    if (now < drop.starts_at - drop.early_min * MINUTE) throw new GameError('not_live', 'This batch is not live yet.', { status: 403 });
+    // Before the head start begins, nobody can claim, whatever they hold. (A drop added to a running batch has its own time.)
+    const opensAt = drop.visible_at !== null && drop.visible_at > drop.starts_at ? drop.visible_at : drop.starts_at;
+    if (now < opensAt - drop.early_min * MINUTE) throw new GameError('not_live', 'This batch is not live yet.', { status: 403 });
 
     // Everything that can be decided from what the phone sent comes first. The network is only asked about a
     // wallet once the claim comes from within reach, so nobody can make the server spend lookups from far away.
@@ -637,7 +689,7 @@ export class Game {
     if (dist > this.reachFor(3)) throw tooFar(this.reachFor(remembered ? remembered.tier : 0));
 
     // A holder's balance is looked up only when this claim needs a perk: the head start, a holder-only drop, or the longer reach.
-    const early = now < drop.starts_at;
+    const early = now < opensAt;
     let tier = 0;
     if (early || drop.gold || dist > cfg.reachM) {
       const lacking = (t) => (early && t < 1) || (drop.gold && t < cfg.goldTier) || (dist > cfg.reachM && t < 3);
@@ -912,11 +964,11 @@ export class Game {
     return resolved;
   }
 
-  /* ---------- fee-funded batches on a schedule ---------- */
+  /* ---------- fee-funded drops on a schedule ---------- */
 
   autoConfig() {
     const saved = JSON.parse(this.getKV('auto') || '{}');
-    return { enabled: false, everyHours: 6, durationHours: 6, minSol: 1, maxSol: 50, goldShare: 0.2, areas: [], nextAt: null, ...saved };
+    return { enabled: false, everyHours: 0.25, durationHours: 6, minSol: 0.2, maxSol: 0, dropSol: 0.2, goldShare: 0.2, areas: [], nextAt: null, cursor: 0, ...saved };
   }
 
   setAuto(input) {
@@ -925,52 +977,80 @@ export class Game {
       .filter((a) => a && typeof a === 'object')
       .map((a) => ({ name: str(a.name).trim().slice(0, 40), lat: numOf(a.lat), lng: numOf(a.lng), radiusM: numOf(a.radiusM) }))
       .filter((a) => a.name && validLatLng(a.lat, a.lng) && a.radiusM >= 10 && a.radiusM <= 20_000)
-      .slice(0, 20);
+      .slice(0, MAX_PLACES);
+    const bounded = (value, lo, hi, fallback) => (Number.isFinite(numOf(value)) ? Math.min(hi, Math.max(lo, numOf(value))) : fallback);
     const next = {
       enabled: !!input.enabled && areas.length > 0,
-      everyHours: Math.min(168, Math.max(0.25, numOf(input.everyHours) || prev.everyHours)),
-      durationHours: Math.min(168, Math.max(0.25, numOf(input.durationHours) || prev.durationHours)),
-      minSol: Math.min(1e6, Math.max(0, numOf(input.minSol ?? prev.minSol) || 0)),
-      maxSol: Math.min(1e6, Math.max(0, numOf(input.maxSol ?? prev.maxSol) || 0)),
-      goldShare: Math.min(1, Math.max(0, numOf(input.goldShare ?? prev.goldShare) || 0)),
+      everyHours: bounded(input.everyHours, 0.25, 168, prev.everyHours),
+      durationHours: bounded(input.durationHours, 0.25, 168, prev.durationHours),
+      minSol: bounded(input.minSol, 0, 1e6, prev.minSol),
+      maxSol: bounded(input.maxSol, 0, 1e6, prev.maxSol), // 0 = no ceiling
+      dropSol: bounded(input.dropSol, 0.001, 1000, prev.dropSol),
+      goldShare: bounded(input.goldShare, 0, 1, prev.goldShare),
       areas,
       nextAt: prev.nextAt,
+      cursor: areas.length ? (Number.isInteger(prev.cursor) ? prev.cursor : 0) % areas.length : 0,
     };
     if (next.enabled && (!next.nextAt || next.nextAt < this.now() || next.everyHours !== prev.everyHours)) {
-      const step = next.everyHours * HOUR;
-      next.nextAt = Math.ceil((this.now() + 1) / step) * step; // lands on round times: 00:00, 06:00, 12:00 ... UTC
+      const step = Math.round(next.everyHours * HOUR);
+      next.nextAt = Math.ceil((this.now() + 1) / step) * step; // lands on round times: :00, :15, :30, :45, or 00:00, 06:00 ... UTC
     }
     if (!next.enabled) next.nextAt = null;
     this.setKV('auto', JSON.stringify(next));
     return next;
   }
 
-  /** Called on a timer. When the schedule is due, hides whatever fees have built up. */
+  /** A running schedule batch for this place, if one has long enough left to be worth topping up. */
+  runningBatchFor(area, now, durationHours) {
+    return this.sql(
+      `SELECT id FROM batches WHERE status = 'live' AND source = 'fees' AND area = ? AND abs(lat - ?) < 1e-6 AND abs(lng - ?) < 1e-6 AND radius_m = ? AND ends_at > ?
+       ORDER BY id DESC LIMIT 1`,
+    ).get(area.name, area.lat, area.lng, area.radiusM, now + (durationHours * HOUR) / 2);
+  }
+
+  /**
+   * Called on a timer. When a run is due, whatever fees are free get cut into drops of the set size and hidden across
+   * the places in turn: with 3 SOL free and 0.2 per drop, fifteen places get a drop, and the next run carries on from
+   * the sixteenth. A place whose batch from an earlier run is still fresh gets its drops added to that batch.
+   */
   autoTick() {
     const auto = this.autoConfig();
     const now = this.now();
     if (!auto.enabled || !auto.areas.length || !auto.nextAt || now < auto.nextAt) return [];
-    const step = auto.everyHours * HOUR;
+    const step = Math.round(auto.everyHours * HOUR);
     let nextAt = auto.nextAt;
     while (nextAt <= now) nextAt += step;
-    this.setKV('auto', JSON.stringify({ ...auto, nextAt })); // move the clock first, so a crash cannot repeat a batch
+    this.setKV('auto', JSON.stringify({ ...auto, nextAt })); // move the clock first, so a crash cannot repeat a run
     const free = this.available();
     if (free === null) return [];
-    const budget = Math.min(free, Math.round(auto.maxSol * 1e9));
-    if (budget < Math.max(auto.minSol * 1e9, this.cfg.tierValues.s)) return [];
-    const share = Math.floor(budget / auto.areas.length);
-    const startsAt = now + this.cfg.earlyMin * MINUTE; // holders see it right away, everyone else after the head start
+    const budget = auto.maxSol > 0 ? Math.min(free, Math.round(auto.maxSol * 1e9)) : free;
+    const perDrop = Math.round(auto.dropSol * 1e9);
+    if (budget < Math.max(Math.round(auto.minSol * 1e9), perDrop)) return [];
+    const count = Math.min(MAX_DROPS_PER_RUN, Math.floor(budget / perDrop));
+    // deal the drops out to the places in turn, carrying on from where the last run stopped
+    const picks = new Map();
+    let i = (Number.isInteger(auto.cursor) ? auto.cursor : 0) % auto.areas.length;
+    for (let d = 0; d < count; d++) {
+      picks.set(i, (picks.get(i) || 0) + 1);
+      i = (i + 1) % auto.areas.length;
+    }
+    this.setKV('auto', JSON.stringify({ ...auto, nextAt, cursor: i }));
+    const startsAt = now + this.cfg.earlyMin * MINUTE; // holders see new drops right away, everyone else after the head start
     const made = [];
-    for (const a of auto.areas) {
+    for (const [index, n] of picks) {
+      const a = auto.areas[index];
       try {
+        const running = this.runningBatchFor(a, now, auto.durationHours);
         made.push(
-          this.createBatch(
-            { name: `Fee drop · ${a.name}`, area: a.name, lat: a.lat, lng: a.lng, radiusM: a.radiusM, totalSol: share / 1e9, goldShare: auto.goldShare, startsAt, endsAt: startsAt + auto.durationHours * HOUR },
-            { source: 'fees' },
-          ),
+          running
+            ? this.addDrops(running.id, { count: n, lamports: perDrop, goldShare: auto.goldShare, visibleAt: startsAt })
+            : this.createBatch(
+                { name: `Fee drop · ${a.name}`, area: a.name, lat: a.lat, lng: a.lng, radiusM: a.radiusM, counts: { m: n }, dropLamports: perDrop, goldShare: auto.goldShare, startsAt, endsAt: startsAt + auto.durationHours * HOUR },
+                { source: 'fees' },
+              ),
         );
       } catch (e) {
-        this.log.warn(`auto batch for ${a.name} skipped: ${e.message}`);
+        this.log.warn(`scheduled drops for ${a.name} skipped: ${e.message}`);
       }
     }
     return made;

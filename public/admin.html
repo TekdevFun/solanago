@@ -100,6 +100,7 @@ input[type=range]{width:100%;accent-color:var(--accent)}
 .confirm{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:13.5px;color:var(--ink-2)}
 .empty{color:var(--ink-2);font-size:14px;padding:6px 0}
 .areas{display:grid;grid-template-columns:minmax(0,1fr);gap:8px;margin:10px 0}
+.arealist{min-width:0}.arealist summary{cursor:pointer;padding:8px 12px;border-radius:13px;background:var(--well);font-size:14px;list-style:none}.arealist summary::-webkit-details-marker{display:none}.arealist[open] summary{margin-bottom:8px}.arealist .area{margin-bottom:6px}
 .area{display:flex;align-items:center;gap:10px;padding:8px 12px;border-radius:13px;background:var(--well);font-size:14px}
 .area span{flex:1;min-width:0}
 .area small{color:var(--ink-2)}
@@ -155,10 +156,10 @@ a{color:var(--accent)}
             <a class="attr" id="attr" href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">© OpenStreetMap</a>
             <button class="locbtn" id="hereBtn" type="button">Go to my location</button>
           </div>
-          <p class="hint">Tap the map to set the centre of the batch. Keep the circle over places the public can walk: parks, squares, pedestrian streets. Drops land at random inside it.</p>
+          <p class="hint">Tap the map to set the centre of the batch. Keep the circle over places the public can walk: parks, squares, pedestrian streets. Drops land at random inside it. The place name fills in by itself from the map; change it if you like.</p>
           <div class="grid">
-            <div class="field"><label for="fName">Name shown in the app</label><input class="input" id="fName" value="Fee drop · Tokyo" maxlength="60"></div>
-            <div class="field"><label for="fArea">Place name</label><input class="input" id="fArea" value="Yoyogi Park" maxlength="40"></div>
+            <div class="field"><label for="fArea">Place name</label><input class="input" id="fArea" placeholder="Filled in from the map" maxlength="40" autocomplete="off"></div>
+            <div class="field"><label for="fName">Name shown in the app</label><input class="input" id="fName" placeholder="Fee drop · (place name)" maxlength="60" autocomplete="off"></div>
             <div class="field"><label for="fLat">Latitude</label><input class="input" id="fLat" inputmode="decimal"></div>
             <div class="field"><label for="fLng">Longitude</label><input class="input" id="fLng" inputmode="decimal"></div>
             <div class="field full"><label for="fRadius">Radius: <span id="radiusOut">150</span> m</label><input id="fRadius" type="range" min="20" max="2000" step="10" value="150"></div>
@@ -183,18 +184,21 @@ a{color:var(--accent)}
         </section>
         <section class="card">
           <h2>Fee drops on a schedule</h2>
-          <p class="hint" style="margin-top:0">On each run, whatever is free in the treasury is split across these places and hidden. Holders see it first.</p>
+          <p class="hint" style="margin-top:0">On each run, the fees that are free get cut into drops of the size below and hidden across the places in turn: with 3 SOL free and 0.2 per drop, fifteen places get a drop, and the next run carries on from the sixteenth. Holders see new drops first.</p>
           <div class="grid three">
             <div class="field"><span class="lab">Schedule</span><label class="check"><input type="checkbox" id="aOn"> Switched on</label></div>
-            <div class="field"><label for="aEvery">Every (hours)</label><input class="input" id="aEvery" inputmode="decimal" value="6"></div>
-            <div class="field"><label for="aHours">Each runs for (hours)</label><input class="input" id="aHours" inputmode="decimal" value="6"></div>
-            <div class="field"><label for="aMin">Skip if under (SOL)</label><input class="input" id="aMin" inputmode="decimal" value="1"></div>
-            <div class="field"><label for="aMax">At most per run (SOL)</label><input class="input" id="aMax" inputmode="decimal" value="50"></div>
+            <div class="field"><label for="aEvery">Every (minutes)</label><input class="input" id="aEvery" inputmode="numeric" value="15"></div>
+            <div class="field"><label for="aDrop">SOL per drop</label><input class="input" id="aDrop" inputmode="decimal" value="0.2"></div>
+            <div class="field"><label for="aHours">A place's batch lasts (hours)</label><input class="input" id="aHours" inputmode="decimal" value="6"></div>
+            <div class="field"><label for="aMin">Skip a run if under (SOL)</label><input class="input" id="aMin" inputmode="decimal" value="0.2"></div>
+            <div class="field"><label for="aMax">At most per run (SOL, 0 = no limit)</label><input class="input" id="aMax" inputmode="decimal" value="0"></div>
             <div class="field"><label for="aGold">Holder-only share (%)</label><input class="input" id="aGold" inputmode="numeric" value="20"></div>
           </div>
           <div class="areas" id="areas"></div>
           <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
             <button class="btn" id="addArea" type="button">Add the circle on the map as a place</button>
+            <button class="btn" id="addWorld" type="button">Add public places around the world</button>
+            <button class="btn" id="clearAreas" type="button" hidden>Remove all places</button>
             <button class="cta" id="saveAuto" type="button" style="height:40px">Save schedule</button>
           </div>
           <p class="msg" id="autoMsg" role="status" hidden></p>

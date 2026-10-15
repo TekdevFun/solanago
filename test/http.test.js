@@ -773,3 +773,30 @@ test('an RPC that has stopped answering does not freeze the map or the admin con
   }
 });
 
+test('the admin console can fetch the world list and a name for a spot', async () => {
+  const app = await startApp({ env: { MAP_TILE_URL: 'https://api.maptiler.com/maps/streets-v4/256/{z}/{x}/{y}.png?key=TESTKEY' } });
+  const realFetch = globalThis.fetch;
+  try {
+    assert.equal((await app.call('/api/admin/places')).status, 401, 'password needed');
+    const list = await app.call('/api/admin/places', { token: ADMIN });
+    assert.equal(list.status, 200);
+    assert.ok(list.json.places.length >= 300);
+    assert.ok(list.json.places.every((p) => p.name && Number.isFinite(p.lat) && Number.isFinite(p.lng) && p.radiusM > 0));
+    // the name lookup goes to the map provider with the map's own key, never to the visitor's browser
+    const asked = [];
+    globalThis.fetch = async (url, init) => {
+      if (!String(url).includes('api.maptiler.com')) return realFetch(url, init);
+      asked.push(String(url));
+      return { ok: true, json: async () => ({ features: [{ text: 'Hyde Park', place_type: ['poi'], context: [{ id: 'municipality.9', text: 'London' }] }] }) };
+    };
+    const named = await app.call('/api/admin/place?lat=51.505&lng=-0.1657', { token: ADMIN });
+    assert.deepEqual([named.status, named.json.name], [200, 'Hyde Park, London']);
+    assert.match(asked[0], /key=TESTKEY/);
+    assert.equal((await app.call('/api/admin/place?lat=abc&lng=1', { token: ADMIN })).json.name, '');
+    assert.equal((await app.call('/api/admin/place?lat=51.5&lng=-0.1')).status, 401);
+  } finally {
+    globalThis.fetch = realFetch;
+    await app.close();
+  }
+});
+

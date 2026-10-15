@@ -57,6 +57,8 @@ const me = { lat: null, lng: null, acc: null, compass: null, compassTs: 0, cours
 const now = () => Date.now() + S.offset;
 const T = () => '$' + S.cfg.ticker;
 const batchOf = id => S.batches.find(b => b.id === id);
+// Map pictures are turned dark in the browser unless the map provider already serves a dark style.
+const darkTiles = () => /dark|night|black/i.test(S.cfg.tileUrl || '');
 
 async function api(path, body) {
   let res;
@@ -266,7 +268,7 @@ const mapView = (() => {
 
   function ensure() {
     if (map) return;
-    map = new TileMap(wrap, { tileUrl: S.cfg.tileUrl, maxZoom: S.cfg.tileMaxZoom, onMove: place, onTap: () => deselect(), onUser: () => { follow = false; } });
+    wrap.classList.toggle('darken', !darkTiles()); map = new TileMap(wrap, { tileUrl: S.cfg.tileUrl, maxZoom: S.cfg.tileMaxZoom, onMove: place, onTap: () => deselect(), onUser: () => { follow = false; } });
     meEl = document.createElement('span'); meEl.className = 'medot'; meEl.hidden = true; meEl.innerHTML = '<i class="cone"></i><i class="dot"></i>'; pinsEl.appendChild(meEl);
   }
   const zoomFor = b => clamp(Math.log2((Math.min(wrap.clientWidth || 390, 430) * .4) / Math.max(20, b.radiusM) * 156543.03392 * Math.cos(b.lat * RAD)), 4, 17);
@@ -408,7 +410,7 @@ function startHunt(d) {
   mapView.deselect();
   $('#huntTitle').textContent = `Hunting ${sol(d.lamports)} SOL`; $('#huntPlace').textContent = hunt.area; $('#inCircle').hidden = true; $('#noteReach').textContent = S.reach; $('#warm').textContent = 'Follow the coin';
   go('hunt');
-  if (!miniMap) { miniMap = new TileMap($('#miniMap'), { tileUrl: S.cfg.tileUrl, maxZoom: S.cfg.tileMaxZoom, interactive: false, onMove: placeMini }); }
+  if (!miniMap) { $('#miniMap').classList.toggle('darken', !darkTiles()); miniMap = new TileMap($('#miniMap'), { tileUrl: S.cfg.tileUrl, maxZoom: S.cfg.tileMaxZoom, interactive: false, onMove: placeMini }); }
   miniMap.resize(); miniMap.setView(d.lat, d.lng, Math.min(17.6, S.cfg.tileMaxZoom));
   if (navigator.wakeLock && navigator.wakeLock.request) navigator.wakeLock.request('screen').then(w => { wakeLock = w; }).catch(() => {});
   hunt.stop = addTicker(dt => { // the dial turns smoothly between sensor readings

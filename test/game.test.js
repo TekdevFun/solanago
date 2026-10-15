@@ -8,6 +8,8 @@ import os from 'node:os';
 import path from 'node:path';
 import { openDb, openDbFor } from '../server/store.js';
 import { Game } from '../server/game.js';
+import { WORLD_PLACES } from '../server/places.js';
+import { fromMaptiler, fromNominatim, maptilerKey, placeName } from '../server/geocode.js';
 import { SOL, HERE, makeGame, oneDrop, walkTo, claimAt, wallet, east, quiet } from './helpers.js';
 
 const rejects = (promise, code) => assert.rejects(promise, (e) => e.code === code || assert.fail(`expected ${code}, got ${e.code}: ${e.message}`));
@@ -373,37 +375,119 @@ test('the fee counter: money arriving is counted in, payouts are not counted out
   assert.equal(game.db.prepare(`SELECT lamports FROM ledger WHERE kind = 'adjust'`).get().lamports, -2 * SOL);
 });
 
-test('scheduled fee drops: on time, within the budget, never twice', async () => {
-  const { game, chain, clock } = makeGame({ balance: 30 * SOL });
+test('scheduled fee drops: on time, in drops of a set size, dealt out to the places in turn, never twice', async () => {
+  const { game, chain, clock } = makeGame({ balance: 3.02 * SOL });
   await game.watchTreasury();
   assert.deepEqual(game.autoTick(), []);
-  const auto = game.setAuto({ enabled: true, everyHours: 6, durationHours: 6, minSol: 1, maxSol: 20, goldShare: 0.25, areas: [{ name: 'Shibuya', lat: 35.6595, lng: 139.7005, radiusM: 400 }, { name: 'Harajuku', lat: HERE.lat, lng: HERE.lng, radiusM: 300 }, { name: 'bad', lat: 999, lng: 0, radiusM: 100 }] });
-  assert.equal(auto.areas.length, 2);
-  assert.equal(new Date(auto.nextAt).getUTCHours() % 6, 0);
+  const places = ['A', 'B', 'C', 'D', 'E', 'F', 'G'].map((name, i) => ({ name, lat: HERE.lat + i * 0.01, lng: HERE.lng, radiusM: 100 }));
+  const auto = game.setAuto({ enabled: true, everyHours: 0.25, durationHours: 6, minSol: 0.2, maxSol: 0, dropSol: 0.2, goldShare: 0.5, areas: [...places, { name: 'bad', lat: 999, lng: 0, radiusM: 100 }] });
+  assert.equal(auto.areas.length, 7);
+  assert.equal(auto.nextAt % (15 * 60_000), 0, 'runs land on the quarter hour');
   assert.ok(auto.nextAt > clock.t);
   assert.deepEqual(game.autoTick(), [], 'not due yet');
+  // 3 SOL free: fifteen drops of 0.2, dealt out A B C D E F G A B C D E F G A
   clock.t = auto.nextAt + 5000;
   const made = game.autoTick();
-  assert.equal(made.length, 2);
-  assert.deepEqual(made.map((b) => [b.name, b.source, b.totalLamports]), [['Fee drop · Shibuya', 'fees', 10 * SOL], ['Fee drop · Harajuku', 'fees', 10 * SOL]]);
+  assert.deepEqual(made.map((b) => [b.name, b.area, b.source, b.drops, b.totalLamports]), [
+    ['Fee drop · A', 'A', 'fees', 3, 0.6 * SOL], ['Fee drop · B', 'B', 'fees', 2, 0.4 * SOL], ['Fee drop · C', 'C', 'fees', 2, 0.4 * SOL], ['Fee drop · D', 'D', 'fees', 2, 0.4 * SOL],
+    ['Fee drop · E', 'E', 'fees', 2, 0.4 * SOL], ['Fee drop · F', 'F', 'fees', 2, 0.4 * SOL], ['Fee drop · G', 'G', 'fees', 2, 0.4 * SOL],
+  ]);
   assert.equal(made[0].startsAt, clock.t + game.cfg.earlyMin * 60_000, 'holders get their head start');
-  assert.ok(made[0].gold > 0);
-  assert.deepEqual(game.autoTick(), [], 'the same slot never fires twice');
-  assert.equal(game.autoConfig().nextAt, auto.nextAt + 6 * 3_600_000);
-  assert.equal(game.stats().nextBatchAt, auto.nextAt + 6 * 3_600_000);
-  // next slot: only 10 SOL minus the reserve is free, which is still above the minimum
-  clock.t = game.autoConfig().nextAt + 1000;
-  assert.equal(game.autoTick().length, 2);
-  // then nothing is left, so the slot is skipped without error
+  assert.equal(made.reduce((n, b) => n + b.gold, 0), 8, 'half of the drops are holder-only, rounded per place (3 drops -> 2)');
+  assert.ok(game.db.prepare(`SELECT COUNT(*) AS n FROM drops WHERE lamports != ?`).get(0.2 * SOL).n === 0, 'every drop is 0.2 SOL');
+  assert.equal(game.autoConfig().cursor, 1, 'the next run carries on from B');
+  assert.deepEqual(game.autoTick(), [], 'the same run never fires twice');
+  assert.equal(game.autoConfig().nextAt, auto.nextAt + 15 * 60_000);
+  assert.equal(game.stats().nextBatchAt, auto.nextAt + 15 * 60_000);
+  // nothing is free now (0.02 SOL is the reserve), so the next run is skipped without error
   clock.t = game.autoConfig().nextAt + 1000;
   assert.deepEqual(game.autoTick(), []);
-  // unfound drops come back when their batch ends, and get hidden again
-  game.expireBatches();
+  // more fees arrive: the next run tops up the batches that are still fresh instead of starting new ones, from B
+  chain.balance += 0.4 * SOL;
+  clock.t += 61_000;
+  await game.watchTreasury();
   clock.t = game.autoConfig().nextAt + 1000;
+  const topped = game.autoTick();
+  assert.deepEqual(topped.map((b) => [b.name, b.drops]), [['Fee drop · B', 3], ['Fee drop · C', 3]]);
+  assert.equal(game.db.prepare(`SELECT COUNT(*) AS n FROM batches`).get().n, 7, 'no new batches');
+  assert.equal(game.autoConfig().cursor, 3);
+  // once a batch is past half its life, the next drops for that place go into a new batch
+  chain.balance += 0.2 * SOL;
+  clock.t += 4 * 3_600_000;
+  await game.watchTreasury();
+  clock.t = Math.max(clock.t, game.autoConfig().nextAt) + 1000;
+  const fresh = game.autoTick();
+  assert.deepEqual(fresh.map((b) => [b.name, b.drops]), [['Fee drop · D', 1]]);
+  assert.equal(game.db.prepare(`SELECT COUNT(*) AS n FROM batches WHERE area = 'D'`).get().n, 2);
+  // unfound drops come back when their batch ends, and get hidden again
+  clock.t += 7 * 3_600_000;
   game.expireBatches();
-  assert.equal(game.autoTick().length, 2);
+  await game.watchTreasury();
+  clock.t = Math.max(clock.t, game.autoConfig().nextAt) + 1000;
+  assert.ok(game.autoTick().length > 0);
   assert.equal(game.setAuto({ enabled: false }).nextAt, null);
   assert.equal(chain.sent.length, 0);
+  // a ceiling per run, and a minimum
+  const capped = makeGame({ balance: 50 * SOL });
+  await capped.game.watchTreasury();
+  const c = capped.game.setAuto({ enabled: true, everyHours: 1, durationHours: 6, minSol: 1, maxSol: 1, dropSol: 0.5, areas: places });
+  capped.clock.t = c.nextAt + 1;
+  assert.deepEqual(capped.game.autoTick().map((b) => b.drops), [1, 1], 'at most 1 SOL a run: two drops of 0.5');
+  capped.game.setAuto({ minSol: 5, maxSol: 2 });
+  capped.clock.t = capped.game.autoConfig().nextAt + 1;
+  assert.deepEqual(capped.game.autoTick(), [], 'under the minimum: nothing');
+});
+
+test('drops added to a running batch keep the head start for holders', async () => {
+  const { game, chain, clock } = makeGame({ balance: 10 * SOL });
+  await game.watchTreasury();
+  const holder = wallet();
+  const none = wallet();
+  chain.holdings.set(holder, 100_000);
+  const batch = game.createBatch({ name: 'Fee drop · Park', area: 'Park', lat: HERE.lat, lng: HERE.lng, radiusM: 10, counts: { m: 1 }, dropLamports: 0.2 * SOL, endsAt: game.now() + 6 * 3_600_000 }, { source: 'fees' });
+  clock.t += 20 * 60_000; // the batch is open to everyone by now
+  const before = game.sync({ ...HERE, device: 'dev-topup-0001', address: none, tier: 0 }).drops.length;
+  assert.equal(before, 1);
+  const summary = game.addDrops(batch.id, { count: 2, lamports: 0.2 * SOL, goldShare: 0, visibleAt: clock.t + 15 * 60_000 });
+  assert.deepEqual([summary.drops, summary.totalLamports], [3, 0.6 * SOL]);
+  // the holder sees the new drops at once, everyone else after 15 minutes
+  assert.equal(game.sync({ ...HERE, device: 'dev-topup-0001', address: none, tier: 0 }).drops.length, 1);
+  const seen = game.sync({ ...HERE, device: 'dev-topup-0002', address: holder, tier: 1 }).drops;
+  assert.equal(seen.length, 3);
+  assert.deepEqual(seen.map((d) => d.early).sort(), [false, true, true]);
+  // and only the holder can claim one of them for now
+  const added = game.db.prepare(`SELECT id, lat, lng FROM drops WHERE batch_id = ? AND visible_at IS NOT NULL`).all(batch.id);
+  walkTo(game, clock, 'dev-topup-0001', added[0]);
+  walkTo(game, clock, 'dev-topup-0002', added[0]);
+  await rejects(claimAt(game, { dropId: added[0].id, address: none, device: 'dev-topup-0001', at: added[0] }), 'not_live');
+  assert.equal((await claimAt(game, { dropId: added[0].id, address: holder, device: 'dev-topup-0002', at: added[0] })).lamports, 0.2 * SOL);
+  clock.t += 15 * 60_000;
+  walkTo(game, clock, 'dev-topup-0001', added[1]);
+  assert.equal(game.sync({ ...HERE, device: 'dev-topup-0001', address: none, tier: 0 }).drops.length, 2);
+  assert.equal((await claimAt(game, { dropId: added[1].id, address: none, device: 'dev-topup-0001', at: added[1] })).lamports, 0.2 * SOL);
+  // the batch has to be running, and the money has to be there
+  assert.throws(() => game.addDrops(batch.id, { count: 100, lamports: 0.2 * SOL }), (e) => e.code === 'funds');
+  game.endBatch(batch.id);
+  assert.throws(() => game.addDrops(batch.id, { count: 1, lamports: 0.2 * SOL }), (e) => e.code === 'bad_batch');
+  assert.throws(() => game.planDrops({ counts: { m: 1 }, dropLamports: 1000 }), (e) => e.code === 'bad_batch');
+});
+
+test('a phone is told about the nearest batches, never the whole world', async () => {
+  const { game, clock } = makeGame({ balance: 100 * SOL });
+  await game.watchTreasury();
+  // sixty live batches in a line heading east, one drop each
+  for (let i = 0; i < 60; i++) {
+    const at = east(HERE, 200 * (i + 1));
+    game.createBatch({ name: `Batch ${i}`, area: `Place ${i}`, lat: at.lat, lng: at.lng, radiusM: 10, counts: { s: 1 }, endsAt: clock.t + 3_600_000 });
+  }
+  const near = game.sync({ ...HERE, device: 'dev-near-000001', address: wallet(), tier: 0 });
+  assert.equal(near.liveBatches, 60);
+  assert.ok(near.batches.length >= 30 && near.batches.length <= 35, `${near.batches.length} batches`);
+  assert.ok(near.batches.every((b) => b.distM <= 7000), 'the nearest ones');
+  assert.ok(near.drops.every((d) => near.batches.some((b) => b.id === d.b)), 'every drop shown belongs to a batch the phone was told about');
+  const blind = game.sync({ device: 'dev-near-000002', address: wallet(), tier: 0 });
+  assert.equal(blind.batches.length, 30);
+  assert.equal(blind.drops.length, 0);
 });
 
 test('asking again after a lost answer gives the same receipt, never a second payout', async () => {
@@ -1497,5 +1581,93 @@ test('a setting that should be a number and is not one stops the server from sta
   // the message never repeats the value: something pasted into the wrong box may be a secret
   const secret = '5J3mBbAH58CpQ3Y5RNJpUKPE62SQ5tfcvU2JpbnkeyhfsYB1Jcn';
   assert.throws(() => loadConfig({ PORT: secret }), (e) => !e.message.includes(secret));
+});
+
+test('the built-in list of places around the world is sound', () => {
+  assert.ok(WORLD_PLACES.length >= 300, `${WORLD_PLACES.length} places`);
+  const names = new Set();
+  for (const p of WORLD_PLACES) {
+    assert.ok(typeof p.name === 'string' && p.name.length >= 5 && p.name.length <= 40, p.name);
+    assert.ok(p.name.includes(','), `${p.name}: says which city`);
+    assert.ok(Number.isFinite(p.lat) && Math.abs(p.lat) <= 85 && Number.isFinite(p.lng) && Math.abs(p.lng) <= 180, p.name);
+    assert.ok(p.radiusM >= 50 && p.radiusM <= 500, `${p.name}: radius ${p.radiusM}`);
+    assert.ok(!names.has(p.name.toLowerCase()), `${p.name} twice`);
+    names.add(p.name.toLowerCase());
+  }
+  // no two places on top of each other
+  for (let i = 0; i < WORLD_PLACES.length; i++) {
+    for (let j = i + 1; j < WORLD_PLACES.length; j++) {
+      const a = WORLD_PLACES[i];
+      const b = WORLD_PLACES[j];
+      if (Math.abs(a.lat - b.lat) < 0.01 && Math.abs(a.lng - b.lng) < 0.01) assert.ok(distanceM(a, b) > 150, `${a.name} and ${b.name} overlap`);
+    }
+  }
+  // and the schedule takes them all
+  const { game } = makeGame();
+  const auto = game.setAuto({ enabled: true, areas: WORLD_PLACES });
+  assert.equal(auto.areas.length, WORLD_PLACES.length);
+  assert.ok(JSON.stringify(auto).length < 60_000, 'small enough to keep in the database');
+});
+
+test('a spot on the map gets a name', async () => {
+  assert.equal(maptilerKey('https://api.maptiler.com/maps/streets-v4/256/{z}/{x}/{y}.png?key=AbC123'), 'AbC123');
+  assert.equal(maptilerKey('https://tile.openstreetmap.org/{z}/{x}/{y}.png'), '');
+  // MapTiler: the park beats the street, and the city is added
+  const maptiler = {
+    features: [
+      { text: 'Rue Mohamed Belouizdad', place_type: ['address'], context: [{ id: 'municipality.1', text: 'Algiers' }] },
+      { text: "Jardin d'Essai du Hamma", place_type: ['poi'], context: [{ id: 'municipality.1', text: 'Algiers' }, { id: 'country.2', text: 'Algeria' }] },
+      { text: 'Algiers', place_type: ['municipality'] },
+    ],
+  };
+  assert.equal(fromMaptiler(maptiler), "Jardin d'Essai du Hamma, Algiers");
+  assert.equal(fromMaptiler({ features: [{ text: 'Somewhere', place_type: ['region'] }] }), 'Somewhere');
+  assert.equal(fromMaptiler({ features: [] }), '');
+  assert.equal(fromMaptiler(null), '');
+  const cut = fromMaptiler({ features: [{ text: 'A very long name for a place that goes on and on', place_type: ['poi'] }] });
+  assert.ok(cut.length <= 40 && cut.endsWith('…'), cut);
+  // Nominatim
+  assert.equal(fromNominatim({ name: 'Hyde Park', address: { leisure: 'Hyde Park', city: 'London' } }), 'Hyde Park, London');
+  assert.equal(fromNominatim({ address: { road: 'Didouche Mourad', town: 'Alger' } }), 'Didouche Mourad, Alger');
+  assert.equal(fromNominatim({ error: 'Unable to geocode' }), '');
+  // the lookup itself: the right provider for the map, and nothing when it fails
+  const calls = [];
+  const fetchImpl = async (url) => {
+    calls.push(url);
+    if (url.includes('maptiler')) return { ok: true, json: async () => maptiler };
+    if (url.includes('nominatim')) return { ok: true, json: async () => ({ name: 'Hyde Park', address: { city: 'London' } }) };
+    throw new Error('no');
+  };
+  assert.equal(await placeName(36.747, 3.075, { tileUrl: 'https://api.maptiler.com/maps/x/256/{z}/{x}/{y}.png?key=K1', fetchImpl }), "Jardin d'Essai du Hamma, Algiers");
+  assert.match(calls[0], /^https:\/\/api\.maptiler\.com\/geocoding\/3\.075000,36\.747000\.json\?key=K1/);
+  assert.equal(await placeName(51.5, -0.16, { tileUrl: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png', fetchImpl }), 'Hyde Park, London');
+  assert.match(calls[1], /nominatim\.openstreetmap\.org\/reverse/);
+  assert.equal(await placeName(51.5, -0.16, { fetchImpl: async () => ({ ok: false }) }), '');
+  // MapTiler with nothing to say: OpenStreetMap is asked next
+  calls.length = 0;
+  const quietMaptiler = async (url) => (url.includes('maptiler') ? { ok: true, json: async () => ({ features: [] }) } : fetchImpl(url));
+  assert.equal(await placeName(51.5, -0.16, { tileUrl: 'https://api.maptiler.com/maps/x/256/{z}/{x}/{y}.png?key=K1', fetchImpl: quietMaptiler }), 'Hyde Park, London');
+  assert.equal(await placeName(51.5, -0.16, { fetchImpl: async () => { throw new Error('offline'); } }), '');
+  assert.equal(await placeName(NaN, 1, { fetchImpl }), '');
+});
+
+test('practice mode: the pretend wallet reading is not held back after a restart', async () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'solanago-restart-'));
+  const file = path.join(dir, 'game.db');
+  try {
+    const cfg = loadConfig({ SERVER_SECRET: 'restart' });
+    let db = openDb(file);
+    const first = new Game({ db, chain: new MockChain({ balance: 25e9 }), cfg, log: quiet });
+    assert.equal(await first.watchTreasury(), 25e9);
+    db.close();
+    // the server restarts a few seconds later with a brand-new pretend chain
+    db = openDb(file);
+    const second = new Game({ db, chain: new MockChain({ balance: 25e9 }), cfg, log: quiet });
+    assert.equal(await second.watchTreasury(), 25e9, 'known at once, not "try again in a minute"');
+    assert.ok(second.available() > 0);
+    db.close();
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
 });
 

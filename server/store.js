@@ -27,7 +27,8 @@ CREATE TABLE IF NOT EXISTS drops (
   gold INTEGER NOT NULL DEFAULT 0,
   status TEXT NOT NULL DEFAULT 'hidden',
   claimed_by TEXT, claimed_at INTEGER, sig TEXT,
-  held_until INTEGER
+  held_until INTEGER,
+  visible_at INTEGER
 );
 CREATE INDEX IF NOT EXISTS drops_by_batch ON drops(batch_id, status);
 CREATE INDEX IF NOT EXISTS drops_by_place ON drops(status, lat, lng);
@@ -63,7 +64,9 @@ export function openDb(file) {
   db.exec('PRAGMA journal_mode = WAL; PRAGMA foreign_keys = ON; PRAGMA busy_timeout = 5000;');
   db.exec(SCHEMA);
   // columns added after the first version
-  if (!db.prepare('PRAGMA table_info(drops)').all().some((col) => col.name === 'held_until')) db.exec('ALTER TABLE drops ADD COLUMN held_until INTEGER');
+  const dropColumns = new Set(db.prepare('PRAGMA table_info(drops)').all().map((col) => col.name));
+  if (!dropColumns.has('held_until')) db.exec('ALTER TABLE drops ADD COLUMN held_until INTEGER');
+  if (!dropColumns.has('visible_at')) db.exec('ALTER TABLE drops ADD COLUMN visible_at INTEGER'); // drops added to a running batch: when everyone may see them
   // One signature, one claim. If an old database already breaks that rule, start anyway: the payout code has its own guard.
   try {
     db.exec('CREATE UNIQUE INDEX IF NOT EXISTS claims_one_sig ON claims(sig) WHERE sig IS NOT NULL');

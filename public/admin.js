@@ -52,7 +52,24 @@ function initMap() {
 function setCentre(lat, lng, move) {
   pick.lat = lat; pick.lng = lng; $('#fLat').value = lat.toFixed(6); $('#fLng').value = lng.toFixed(6);
   if (move && map) map.flyTo({ lat, lng }, 400); else place();
+  nameTheSpot();
 }
+// The place name comes from the map, unless the admin typed one of their own.
+let nameTimer = 0, nameReq = 0;
+function nameTheSpot() {
+  clearTimeout(nameTimer);
+  nameTimer = setTimeout(async () => {
+    const req = ++nameReq, lat = pick.lat, lng = pick.lng;
+    try {
+      const r = await call(`/api/admin/place?lat=${lat.toFixed(6)}&lng=${lng.toFixed(6)}`);
+      if (req !== nameReq || !r.name) return;
+      const area = $('#fArea'), name = $('#fName');
+      if (!area.value.trim() || area.dataset.auto === '1') { area.value = r.name; area.dataset.auto = '1'; }
+      if (!name.value.trim() || name.dataset.auto === '1') { name.value = 'Fee drop · ' + $('#fArea').value; name.dataset.auto = '1'; }
+    } catch (e) {}
+  }, 500);
+}
+for (const id of ['#fArea', '#fName']) $(id).addEventListener('input', () => { $(id).dataset.auto = '0'; });
 function place() {
   if (!map || !map.w) return;
   const p = map.project(pick.lat, pick.lng), mpp = map.metresPerPx(pick.lat), c = $('#pickCircle');
@@ -93,8 +110,11 @@ $('#hideBtn').addEventListener('click', async () => {
   if (!(hours > 0)) return say($('#formMsg'), 'Enter how many hours the batch runs for.');
   $('#hideBtn').disabled = true;
   try {
-    const r = await call('/api/admin/batches', { name: $('#fName').value, area: $('#fArea').value, lat: pick.lat, lng: pick.lng, radiusM: num($('#fRadius')), totalSol: num($('#fSol')), goldShare: num($('#fGold')) / 100, startsAt, endsAt: startsAt + hours * 3600e3, earlyMin: num($('#fEarly')), onePerPerson: $('#fOne').checked });
+    const area = $('#fArea').value.trim(), name = $('#fName').value.trim() || (area ? 'Fee drop · ' + area : '');
+    if (!name) throw new Error('Give the place a name first (the box under the map).');
+    const r = await call('/api/admin/batches', { name, area, lat: pick.lat, lng: pick.lng, radiusM: num($('#fRadius')), totalSol: num($('#fSol')), goldShare: num($('#fGold')) / 100, startsAt, endsAt: startsAt + hours * 3600e3, earlyMin: num($('#fEarly')), onePerPerson: $('#fOne').checked });
     say($('#formMsg'), `Hidden: ${int(r.batch.drops)} drops, ${sol(r.batch.totalLamports)} SOL in ${r.batch.area || r.batch.name}.`, true);
+    $('#fArea').dataset.auto = '1'; $('#fName').dataset.auto = '1'; // the next spot picked on the map gets its own name again
     await refresh();
   } catch (e) { say($('#formMsg'), e.message); }
   $('#hideBtn').disabled = false; preview();
@@ -120,14 +140,20 @@ function render() {
   $('#claims').innerHTML = d.claims.length ? d.claims.map(c => `<tr><td>${when(c.ts)}</td><td title="${esc(c.address)}">${esc(short(c.address))}</td><td>${sol(c.lamports)}</td><td>${c.dist === null ? '' : c.dist + ' m'}</td><td>${c.acc === null ? '' : Math.round(c.acc) + ' m'}</td><td class="${esc(c.status)}" title="${esc(c.error || '')}">${esc(c.status)}</td><td>${esc(c.device)}</td><td>${esc(c.ip.slice(0, 8))}</td></tr>`).join('') : '<tr><td colspan="8" class="empty">No claims yet.</td></tr>';
   if (!autoLoaded) {
     autoLoaded = true; const a = d.auto; areas = a.areas.slice();
-    $('#aOn').checked = a.enabled; $('#aEvery').value = a.everyHours; $('#aHours').value = a.durationHours; $('#aMin').value = a.minSol; $('#aMax').value = a.maxSol; $('#aGold').value = Math.round(a.goldShare * 100);
+    $('#aOn').checked = a.enabled; $('#aEvery').value = Math.round(a.everyHours * 60); $('#aDrop').value = a.dropSol; $('#aHours').value = a.durationHours; $('#aMin').value = a.minSol; $('#aMax').value = a.maxSol; $('#aGold').value = Math.round(a.goldShare * 100);
     if (a.enabled && a.nextAt) say($('#autoMsg'), `Next run: ${when(a.nextAt)}.`, true);
   }
   renderAreas(); place();
 }
 function renderAreas() {
-  $('#areas').innerHTML = areas.length ? areas.map((a, i) => `<div class="area"><span><b>${esc(a.name)}</b> <small>${a.lat.toFixed(4)}, ${a.lng.toFixed(4)} · ${int(a.radiusM)} m</small></span><button class="btn" data-rm="${i}" type="button">Remove</button></div>`).join('') : '<p class="empty">No places yet. Set the circle on the map, name it under Place name, then add it here.</p>';
+  const rows = areas.map((a, i) => `<div class="area"><span><b>${esc(a.name)}</b> <small>${a.lat.toFixed(4)}, ${a.lng.toFixed(4)} · ${int(a.radiusM)} m</small></span><button class="btn" data-rm="${i}" type="button">Remove</button></div>`).join('');
+  $('#areas').innerHTML = !areas.length ? '<p class="empty">No places yet. Add the circle on the map, or the list of places around the world.</p>'
+    : areas.length <= 12 ? rows
+    : `<details class="arealist"${areasOpen ? ' open' : ''}><summary><b>${int(areas.length)} places</b> · tap to see them</summary>${rows}</details>`;
+  $('#clearAreas').hidden = !areas.length;
 }
+let areasOpen = false;
+$('#areas').addEventListener('toggle', e => { if (e.target.matches('details')) areasOpen = e.target.open; }, true);
 $('#batches').addEventListener('click', async e => {
   const end = e.target.closest('[data-end]'), yes = e.target.closest('[data-end-yes]'), no = e.target.closest('[data-end-no]');
   if (end) { confirming = +end.dataset.end; render(); }
@@ -136,14 +162,28 @@ $('#batches').addEventListener('click', async e => {
 });
 $('#areas').addEventListener('click', e => { const b = e.target.closest('[data-rm]'); if (b) { areas.splice(+b.dataset.rm, 1); renderAreas(); } });
 $('#addArea').addEventListener('click', () => {
-  const name = $('#fArea').value.trim(); if (!name) return say($('#autoMsg'), 'Type a place name in the form on the left first.');
+  const name = $('#fArea').value.trim(); if (!name) return say($('#autoMsg'), 'Give the place a name first (the box under the map).');
   areas.push({ name, lat: pick.lat, lng: pick.lng, radiusM: num($('#fRadius')) }); renderAreas(); say($('#autoMsg'), `${name} added. Save the schedule to keep it.`, true);
 });
+$('#addWorld').addEventListener('click', async () => {
+  $('#addWorld').disabled = true;
+  try {
+    const r = await call('/api/admin/places');
+    const have = new Set(areas.map(a => a.name.toLowerCase()));
+    let added = 0;
+    for (const p of r.places) if (!have.has(p.name.toLowerCase())) { areas.push(p); added++; }
+    areasOpen = false; renderAreas();
+    say($('#autoMsg'), added ? `${int(added)} places added, ${int(areas.length)} in all. Save the schedule to keep them.` : 'Those places are all in the list already.', true);
+  } catch (e) { say($('#autoMsg'), e.message); }
+  $('#addWorld').disabled = false;
+});
+$('#clearAreas').addEventListener('click', () => { areas = []; renderAreas(); say($('#autoMsg'), 'All places removed. Save the schedule to make it so.', true); });
 $('#saveAuto').addEventListener('click', async () => {
   try {
-    const r = await call('/api/admin/auto', { enabled: $('#aOn').checked, everyHours: num($('#aEvery')), durationHours: num($('#aHours')), minSol: num($('#aMin')), maxSol: num($('#aMax')), goldShare: num($('#aGold')) / 100, areas });
+    const r = await call('/api/admin/auto', { enabled: $('#aOn').checked, everyHours: num($('#aEvery')) / 60, dropSol: num($('#aDrop')), durationHours: num($('#aHours')), minSol: num($('#aMin')), maxSol: num($('#aMax')), goldShare: num($('#aGold')) / 100, areas });
     areas = r.auto.areas.slice(); $('#aOn').checked = r.auto.enabled; renderAreas();
-    say($('#autoMsg'), r.auto.enabled ? `Saved. Next run: ${when(r.auto.nextAt)}.` : areas.length ? 'Saved. The schedule is off.' : 'Saved, but the schedule needs at least one place to run.', r.auto.enabled || !$('#aOn').checked);
+    $('#aEvery').value = Math.round(r.auto.everyHours * 60); $('#aDrop').value = r.auto.dropSol;
+    say($('#autoMsg'), r.auto.enabled ? `Saved. ${int(areas.length)} places, ${r.auto.dropSol} SOL per drop, every ${Math.round(r.auto.everyHours * 60)} minutes. Next run: ${when(r.auto.nextAt)}.` : areas.length ? 'Saved. The schedule is off.' : 'Saved, but the schedule needs at least one place to run.', r.auto.enabled || !$('#aOn').checked);
   } catch (e) { say($('#autoMsg'), e.message); }
 });
 // The emergency brake: nobody can claim while paused. Drops and batches stay as they are.

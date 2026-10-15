@@ -403,9 +403,14 @@ export class MockChain {
     return this.balance;
   }
 
+  /** A pretend slot number that, like the real one, keeps going up across restarts (about one every 400 ms). */
+  nextSlot() {
+    this.slot = Math.max((this.slot || 0) + 1, Math.floor(Date.now() / 400));
+    return this.slot;
+  }
+
   async balanceAt() {
-    this.slot = (this.slot || 0) + 1;
-    return { lamports: this.balance, slot: this.slot };
+    return { lamports: this.balance, slot: this.nextSlot() };
   }
 
   async blockHeight() {
@@ -439,8 +444,7 @@ export class MockChain {
     if (lamports + BASE_FEE > this.balance) throw new ChainError('Payout rejected: insufficient funds', { code: 'insufficient' });
     this.balance -= lamports + BASE_FEE;
     this.sent.push({ to, lamports, signature });
-    this.slot = (this.slot || 0) + 1;
-    return { signature, slot: this.slot };
+    return { signature, slot: this.nextSlot() };
   }
 
   async tokenBalance(owner) {

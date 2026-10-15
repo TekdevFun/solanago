@@ -4,7 +4,7 @@ Real SOL, hidden in the real world. Trading fees from the $SolanaGO coin arrive 
 
 This folder is the whole product: the app people open on their phones, the admin console you hide drops from, and the server behind both. There are no packages to install.
 
-**Status.** Everything here has been run end to end on a test bench: a simulated phone walking to a drop, a pretend Solana node that checks every transaction's signature and contents, and 81 automated tests. The payout code then went through five rounds of independent review whose only job was to break it; what they found is fixed, and each fix has a test. It has **not** yet been run with real SOL on the real network, or on physical phones. Step 6 below is that test. It moves 0.05 SOL from the treasury to a wallet of your own, so all it costs is the network fee.
+**Status.** Everything here has been run end to end on a test bench: a simulated phone walking to a drop, a pretend Solana node that checks every transaction's signature and contents, and 87 automated tests. The payout code then went through five rounds of independent review whose only job was to break it; what they found is fixed, and each fix has a test. It has **not** yet been run with real SOL on the real network, or on physical phones. Step 6 below is that test. It moves 0.05 SOL from the treasury to a wallet of your own, so all it costs is the network fee.
 
 ## What is in the folder
 
@@ -134,7 +134,13 @@ Claiming from pump.fun is the one step that is still by hand. Because every arri
 
 ### 9. Switch on the schedule
 
-In the admin console, under **Fee drops on a schedule**: put the circle on the map over a place, give it a name, press **Add the circle on the map as a place**, repeat for every place you want, tick **Switched on**, and save. From then on, at each run, whatever is free in the treasury is split across those places and hidden. Tier 1 holders see it at once; everyone else after the head start.
+In the admin console, under **Fee drops on a schedule**:
+
+1. Press **Add public places around the world** for the built-in list of 500+ parks, squares and promenades in cities on every continent, or put the circle on the map over a place of your own and press **Add the circle on the map as a place**. Mix both as you like, and remove any place from the list.
+2. Set how often it runs (every 15 minutes out of the box), the size of a drop (0.2 SOL), how long a place's batch lasts, and the holder-only share.
+3. Tick **Switched on** and **Save schedule**.
+
+At each run the fees that are free get cut into drops of that size and dealt out to the places in turn: with 3 SOL free and 0.2 per drop, fifteen places get a drop, and the next run carries on from the sixteenth, round and round. A place whose batch from an earlier run is still fresh gets its new drops added to it. Tier 1 holders see new drops at once; everyone else after the head start. Drops nobody finds come back to the pool when their batch ends.
 
 ## How the money moves
 
@@ -156,7 +162,7 @@ fees arrive  ->  free to hide  ->  hidden in live drops  ->  claimed (sent to hu
 ## The admin console (`/admin`)
 
 - **Top row:** the treasury address, what is in the wallet, what is hidden in live drops, and what is free to hide.
-- **Hide a batch:** tap the map to set the centre, choose radius and amount. Drops land at random inside the circle, so keep the circle over places the public can walk. The preview shows how the amount splits into small, mid and big drops. "Holder-only share" turns that share of the mid and big drops into gold drops.
+- **Hide a batch:** tap the map to set the centre, choose radius and amount. The place name fills in by itself from the map (change it if you like). Drops land at random inside the circle, so keep the circle over places the public can walk. The preview shows how the amount splits into small, mid and big drops. "Holder-only share" turns that share of the mid and big drops into gold drops.
 - **Batches:** what is live, how many have been found, and **End now**.
 - **A red notice at the top** appears when something about the way requests reach the app needs a look, most often that the app cannot tell visitors apart. It says what is wrong and what to change. While visitors cannot be told apart, the daily allowance per network is not in force.
 - **Recent claims:** wallet, amount, how far from the spot the phone said it was, GPS accuracy, and short codes for the phone and the network. The same phone or network code next to many different wallets usually means one person collecting for several.
@@ -191,7 +197,7 @@ The most a cheat can ever take is what you have hidden in live batches. The rest
 - **Logs** say when a batch is hidden, when a payout fails and why, and when the schedule runs. A line saying a payout "was written off but the transfer landed after all; corrected" is the half-hour hold doing its job. A line asking you to check a transaction by hand means the network could not say what became of a payout for a whole day; look the signature up on Solscan.
 - **Backups:** the database is a record; the money is in the wallet. Losing the database loses the list of live drops and the history, not the SOL. Copy `/data/solanago.db` now and then if you care about the history.
 - **One wallet, one database.** If the server ever starts without its key, or with another wallet's key, it refuses to run on the live database and says so. Practice data is set aside by itself the first time you start with a real key.
-- **Updating:** replace the files and redeploy. The disk at `/data` keeps the data.
+- **Updating:** upload the new files over the old ones (on GitHub: Add file → Upload files, drag the whole folder's contents, Commit) and the host redeploys by itself. The disk at `/data` keeps the data; new versions bring their own database changes.
 - **Taking money out:** end the live batches, then send from the treasury with any wallet app that has its key.
 
 ## Before you promote it
@@ -216,7 +222,7 @@ No dependencies and no build step: Node 22.13+ with its built-in `http`, `sqlite
 ```
 npm start         run the server (reads .env if present)
 npm run dev       the same, restarting on changes
-npm test          81 tests: game rules, transaction encoding, HTTP API
+npm test          87 tests: game rules, transaction encoding, HTTP API
 npm run check     check settings, RPC, wallet and coin without moving money
 npm run keygen    print a new wallet
 ```
@@ -225,12 +231,15 @@ npm run keygen    print a new wallet
 | --- | --- |
 | `server/index.js` | Start-up, background jobs (treasury watch about once a minute, payout reconciler 20 s, batch expiry and schedule 30 s) |
 | `server/game.js` | Batches, drops, visibility, claims, holder tiers, fee ledger, schedule |
+| `server/places.js`, `server/geocode.js` | The built-in list of places around the world; a name for a spot on the map |
 | `server/solana.js` | Keys, a hand-built legacy transfer transaction, send and confirm, token balances; `MockChain` for practice mode and tests |
 | `server/http.js` | Static files, public API, admin API, rate limits, visitor addresses, security headers |
 | `server/store.js` | SQLite schema and transactions |
 | `server/geo.js`, `server/base58.js`, `server/config.js` | Helpers and settings |
 
-API: `GET /api/config`, `GET /api/sync?lat&lng&acc&device&address`, `POST /api/claim`, `GET /api/me?address`, `GET /api/stats`, `GET /healthz`. Admin (header `Authorization: Bearer <ADMIN_TOKEN>`): `GET /api/admin/overview`, `POST /api/admin/preview`, `POST /api/admin/batches`, `POST /api/admin/batches/:id/end`, `POST /api/admin/auto`, `POST /api/admin/pause`.
+API: `GET /api/config`, `GET /api/sync?lat&lng&acc&device&address`, `POST /api/claim`, `GET /api/me?address`, `GET /api/stats`, `GET /healthz`. Admin (header `Authorization: Bearer <ADMIN_TOKEN>`): `GET /api/admin/overview`, `POST /api/admin/preview`, `POST /api/admin/batches`, `POST /api/admin/batches/:id/end`, `POST /api/admin/auto`, `GET /api/admin/places`, `GET /api/admin/place?lat&lng`, `POST /api/admin/pause`.
+
+The place name for a spot comes from MapTiler's geocoding when the map is MapTiler's (same key), and from OpenStreetMap's Nominatim otherwise; both are best effort. The app's map is drawn dark in the browser; a map style whose address contains "dark" or "night" is shown as it comes.
 
 How a claim stays safe:
 
