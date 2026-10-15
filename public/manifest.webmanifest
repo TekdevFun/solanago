@@ -1,0 +1,14 @@
+{
+  "name": "SolanaGO",
+  "short_name": "SolanaGO",
+  "description": "Trading fees get hidden as SOL in the real world. Walk to a drop and it is yours.",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#f1f3f7",
+  "theme_color": "#f1f3f7",
+  "icons": [
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}

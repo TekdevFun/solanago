@@ -1,0 +1,1141 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<style>:root{color-scheme:light}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+</head>
+<body>
+<title>SolanaGO demo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Inter+Tight:wght@700;800&display=swap">
+<style>
+/* Layout: one phone-sized app on a soft studio backdrop; on wide screens the name and how-to sit to its left. */
+:root{
+  --stage-a:#f0f2f7; --stage-b:#e1e5ee; --stage-ink:#0d1220; --stage-dim:#5f6877; --stage-chip:rgba(13,18,32,.07);
+  --device-shadow:0 44px 90px rgba(42,52,88,.20),0 10px 24px rgba(42,52,88,.10);
+  --surface:#f1f3f7; --card:#ffffff; --well:#e9ecf2; --line:#dfe3ea;
+  --ink:#0d1220; --ink-2:#5f6877; --ink-3:#98a0ad;
+  --accent:#2d6be4; --accent-hi:#3f7df2; --accent-lo:#245cd0; --accent-soft:#e4ecfb; --on-accent:#ffffff;
+  --coin-a:#cf47ea; --coin-b:#6f9acd; --coin-c:#19f5a3; --coin-face:#232323; --coin-face-hi:#3b3b42; --coin-e1:#0b0b0c; --coin-e2:#3a3a40; --coin-e3:#151517;
+  --good:#16894b; --good-soft:#e1f5e8; --gold:#f0b429; --gold-soft:#fdf2d0; --gold-ink:#7a4f00;
+  --map-land:#e8eaee; --map-road:#ffffff; --map-park:#d3eac5; --map-water:#bedbf3; --map-rail:#a6abb5;
+  --map-text:#8a92a0; --map-park-text:#7b9972; --map-station:#5d6573;
+  --ar-top:#2b4f33; --ar-mid:#6a9a5f; --ar-low:#3d6733; --ar-path:#c3b58e; --ar-ink:#ffffff;
+  --font-ui:"Inter",system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  --font-display:"Inter Tight","Inter",system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){--stage-a:#1a1f2b;--stage-b:#0c0f16;--stage-ink:#f2f4f9;--stage-dim:#9ba4b3;--stage-chip:rgba(255,255,255,.1);--device-shadow:0 44px 90px rgba(0,0,0,.6),0 0 0 1px rgba(255,255,255,.08);color-scheme:dark}
+}
+:root[data-theme="dark"]{--stage-a:#1a1f2b;--stage-b:#0c0f16;--stage-ink:#f2f4f9;--stage-dim:#9ba4b3;--stage-chip:rgba(255,255,255,.1);--device-shadow:0 44px 90px rgba(0,0,0,.6),0 0 0 1px rgba(255,255,255,.08);color-scheme:dark}
+
+*,*::before,*::after{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;overflow:hidden;background:radial-gradient(120% 90% at 28% 8%,var(--stage-a),var(--stage-b));color:var(--stage-ink);font-family:var(--font-ui);font-size:15px;line-height:1.35;-webkit-font-smoothing:antialiased;-webkit-tap-highlight-color:transparent}
+button{font:inherit;color:inherit;cursor:pointer;-webkit-appearance:none;appearance:none}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+h1,h2,p{margin:0}
+
+/* ---------- stage ---------- */
+.stage{height:100%;display:flex;align-items:center;justify-content:center;gap:clamp(40px,7vw,96px);padding:24px 16px}
+.intro{display:none;width:340px;flex:none}
+@media (min-width:960px){.intro{display:block}}
+.intro canvas{width:132px;height:132px;display:block;margin-left:-14px}
+.intro h1{font-family:var(--font-display);font-weight:800;font-size:46px;letter-spacing:-.03em;line-height:1.02;margin:0 0 16px;display:flex;align-items:center;gap:14px}
+.intro h1 .logo{width:62px;height:62px}
+.intro .lede{font-size:17px;line-height:1.45;color:var(--stage-dim);margin-bottom:28px;max-width:30ch}
+.intro ol{margin:0 0 26px;padding:0;list-style:none;counter-reset:s;display:grid;gap:12px}
+.intro li{counter-increment:s;display:grid;grid-template-columns:26px 1fr;gap:12px;align-items:start;font-size:15px;line-height:1.45}
+.intro li::before{content:counter(s);width:26px;height:26px;border-radius:50%;background:var(--stage-chip);display:grid;place-items:center;font-weight:700;font-size:12.5px}
+.ghost{height:40px;padding:0 16px;border-radius:20px;border:1px solid var(--stage-chip);background:var(--stage-chip);color:var(--stage-ink);font-weight:600;font-size:14px}
+.intro .fineprint{margin-top:18px;font-size:12.5px;color:var(--stage-dim);max-width:34ch}
+.device{height:100%;width:100%;max-width:400px;min-width:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px}
+.caption{font-size:12px;color:var(--stage-dim);flex:none}
+@media (min-width:960px){.caption{display:none}}
+.phone{position:relative;width:100%;flex:1 1 auto;min-height:0;max-height:860px;border-radius:46px;overflow:hidden;overflow:clip;isolation:isolate;background:var(--surface);color:var(--ink);box-shadow:var(--device-shadow);color-scheme:light;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
+@media (max-width:520px){
+  .stage{padding:0}
+  .device{max-width:none;gap:0}
+  .phone{border-radius:0;max-height:none;box-shadow:none}
+  .caption{display:none}
+}
+
+/* ---------- shared ---------- */
+.screen{position:absolute;inset:0;overflow:hidden;overflow:clip;opacity:0;transform:scale(.98);pointer-events:none;transition:opacity .3s ease,transform .42s cubic-bezier(.2,.8,.2,1)}
+.screen.on{opacity:1;transform:none;pointer-events:auto}
+.ico{width:22px;height:22px;flex:none;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.coin{display:block;flex:none;height:auto;aspect-ratio:40/43;filter:drop-shadow(0 2px 3px rgba(13,18,32,.3))}
+.coinf{display:block;flex:none}
+.rbtn{width:44px;height:44px;flex:none;border:0;border-radius:50%;background:var(--card);color:var(--ink);display:grid;place-items:center;box-shadow:0 1px 2px rgba(13,18,32,.06),0 6px 18px rgba(13,18,32,.12)}
+.rbtn:active{transform:scale(.94)}
+.cta{width:100%;height:56px;border:0;border-radius:28px;background:linear-gradient(var(--accent-hi),var(--accent-lo));color:var(--on-accent);font-weight:600;font-size:16px;display:flex;align-items:center;justify-content:center;gap:9px;box-shadow:0 12px 26px rgba(45,107,228,.34),inset 0 1px 0 rgba(255,255,255,.28);transition:transform .15s}
+.cta:active{transform:scale(.98)}
+.cta .ico{width:20px;height:20px}
+.cta[aria-disabled="true"]{background:var(--well);color:var(--ink-2);box-shadow:none}
+.avatar{width:34px;height:34px;flex:none;border-radius:50%;display:grid;place-items:center;font-weight:700;font-size:14px;color:var(--on-accent)}
+.avatar.h{background:linear-gradient(140deg,#8b6cf2,#4a47c9)}
+.avatar.me{background:var(--ink)}
+.grab{width:44px;height:5px;border-radius:3px;background:var(--line);margin:0 auto}
+
+/* ---------- home ---------- */
+#home{background:var(--surface)}
+.home-glow{position:absolute;inset:0 0 auto 0;height:250px;pointer-events:none;background:radial-gradient(75% 100% at 50% 0%,rgba(112,146,255,.55),rgba(112,146,255,0) 72%)}
+.scroll{position:absolute;inset:0;overflow-y:auto;scrollbar-width:none;padding:22px 20px 30px;display:flex;flex-direction:column;gap:18px}
+.scroll::-webkit-scrollbar{display:none}
+.acct{display:flex;align-items:center;gap:10px}
+.brand{font-family:var(--font-display);font-weight:800;font-size:23px;letter-spacing:-.025em;line-height:1;display:flex;align-items:center;gap:9px}
+.brand .logo{width:32px;height:32px}
+.brand i,.intro h1 i{font-style:normal;color:var(--accent)}
+.tag{margin-left:auto;font-size:11.5px;font-weight:600;letter-spacing:.02em;color:var(--ink-2);background:rgba(255,255,255,.72);border-radius:999px;padding:5px 10px}
+.alert{width:100%;border:0;text-align:left;background:var(--card);border-radius:30px;padding:9px 14px 9px 10px;display:flex;align-items:center;gap:12px;box-shadow:0 1px 2px rgba(13,18,32,.05),0 10px 26px rgba(48,72,160,.16)}
+.alert:active{transform:scale(.985)}
+.alert-t{flex:1;min-width:0;display:grid}
+.alert-t b{font-weight:600;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.alert-t small{font-size:13px;color:var(--ink-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.alert .ico{color:var(--ink-3);width:20px;height:20px}
+.bal{display:grid;gap:2px;margin-top:2px}
+.lbl{font-size:14px;font-weight:500;color:var(--ink-2)}
+.bal-n{font-family:var(--font-display);font-weight:800;font-size:58px;letter-spacing:-.035em;line-height:1.02;font-variant-numeric:tabular-nums;display:flex;align-items:baseline;flex-wrap:wrap}
+.bal-n .dec{font-size:.6em;color:var(--ink-3);letter-spacing:-.02em}
+.bal-n .unit{font-family:var(--font-ui);font-size:19px;font-weight:600;letter-spacing:0;color:var(--ink-2);margin-left:9px}
+.acts{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.act{border:0;text-align:left;background:var(--card);border-radius:24px;padding:14px;display:grid;gap:14px;font-weight:600;font-size:15px;box-shadow:0 1px 2px rgba(13,18,32,.04),0 6px 18px rgba(13,18,32,.05)}
+.act:active{transform:scale(.98)}
+.act small{display:block;font-weight:400;font-size:12.5px;color:var(--ink-2);margin-top:1px}
+.act-i{width:42px;height:42px;border-radius:50%;background:var(--accent-soft);color:var(--accent);display:grid;place-items:center}
+.sec{font-family:var(--font-display);font-weight:700;font-size:20px;letter-spacing:-.01em;margin:8px 0 -6px;display:flex;justify-content:space-between;align-items:baseline}
+.sec span{font-family:var(--font-ui);font-size:14px;font-weight:500;color:var(--ink-2)}
+.camp{width:100%;border:0;text-align:left;background:var(--card);border-radius:24px;padding:14px 16px 16px;display:grid;grid-template-columns:auto 1fr auto;gap:4px 12px;align-items:center;box-shadow:0 1px 2px rgba(13,18,32,.04),0 6px 18px rgba(13,18,32,.05)}
+button.camp:active{transform:scale(.985)}
+.camp-t{min-width:0;display:grid}
+.camp-t b{font-weight:600;font-size:15px}
+.camp-t small{font-size:13px;color:var(--ink-2)}
+.camp .ico{color:var(--ink-3);width:20px;height:20px}
+.bar{grid-column:1/-1;height:6px;border-radius:3px;background:var(--well);overflow:hidden;margin-top:8px}
+.bar i{display:block;height:100%;border-radius:3px;background:linear-gradient(90deg,var(--coin-a),var(--coin-b),var(--coin-c))}
+.camp .when{grid-column:1/-1;font-size:13px;color:var(--ink-2);margin-top:6px}
+.list{background:var(--card);border-radius:24px;padding:4px 16px;box-shadow:0 1px 2px rgba(13,18,32,.04),0 6px 18px rgba(13,18,32,.05)}
+.frow{display:flex;align-items:center;gap:12px;min-height:62px}
+.frow + .frow{border-top:1px solid var(--line)}
+.frow-t{flex:1;min-width:0;display:grid}
+.frow-t b{font-weight:600}
+.frow-t small{font-size:13px;color:var(--ink-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.frow time{font-size:12.5px;color:var(--ink-3);flex:none}
+.empty{padding:16px 0;font-size:14px;color:var(--ink-2)}
+.fine{font-size:12.5px;line-height:1.5;color:var(--ink-3);margin-top:4px}
+.link{border:0;background:none;padding:0;color:var(--ink-2);font-weight:600;text-decoration:underline;text-underline-offset:2px}
+
+.sec b{font-weight:inherit}
+.tkr{font-style:normal}
+.flow,.perks{background:var(--card);border-radius:24px;padding:14px;display:grid;gap:12px;box-shadow:0 1px 2px rgba(13,18,32,.04),0 6px 18px rgba(13,18,32,.05)}
+.flow .rows{margin-top:0}
+.flow .fine,.perks .fine{margin:0 2px}
+.next{display:flex;align-items:center;gap:11px;padding:2px 4px 0}
+.next > .ico{width:20px;height:20px;color:var(--ink-2)}
+.nx{display:grid;min-width:0}
+.nx small{font-size:12.5px;color:var(--ink-2)}
+.nx b{font-weight:600;font-size:15px;font-variant-numeric:tabular-nums}
+.nx-r{margin-left:auto;text-align:right}
+.nx-r.early small,.nx-r.early b{color:var(--gold-ink)}
+.hold-top{display:flex;align-items:center;gap:10px;padding:0 2px}
+.hold-top div{display:grid;min-width:0}
+.hold-top small{font-size:12.5px;color:var(--ink-2)}
+.hold-top b{font-family:var(--font-display);font-weight:700;font-size:22px;letter-spacing:-.01em;line-height:1.15;font-variant-numeric:tabular-nums}
+.tierchip{margin-left:auto;flex:none;font-size:12px;font-weight:600;padding:5px 11px;border-radius:999px;background:var(--well);color:var(--ink-2)}
+.tierchip.on{background:var(--gold-soft);color:var(--gold-ink)}
+.try{display:grid;gap:7px}
+.try small{font-size:12px;color:var(--ink-3);padding:0 2px}
+.seg.seg-hold{margin-top:0;justify-content:stretch}
+.seg-hold button{flex:1;min-width:0;padding:0 4px}
+.perk{display:grid;grid-template-columns:38px 1fr auto;gap:12px;align-items:center;padding:0 2px}
+.pk-i{width:38px;height:38px;border-radius:50%;display:grid;place-items:center;background:var(--well);color:var(--ink-3)}
+.pk-i .ico{width:19px;height:19px}
+.pk-t{display:grid;min-width:0}
+.pk-t b{font-weight:600;font-size:14.5px;color:var(--ink-2)}
+.pk-t small{font-size:12.5px;color:var(--ink-2)}
+.pk-n{font-size:12px;font-weight:600;color:var(--ink-3);white-space:nowrap}
+.perk.on .pk-i{background:var(--gold-soft);color:var(--gold-ink)}
+.perk.on .pk-t b{color:var(--ink)}
+.perk.on .pk-n{color:var(--good)}
+.gold-chip{display:inline-flex;align-items:center;height:22px;padding:0 9px;margin-left:8px;border-radius:11px;vertical-align:3px;background:var(--gold-soft);color:var(--gold-ink);font-family:var(--font-ui);font-size:12px;font-weight:600;letter-spacing:0}
+
+/* ---------- map ---------- */
+#map{background:var(--map-land)}
+.mapwrap{position:absolute;inset:0;touch-action:none;cursor:grab;overflow:hidden;overflow:clip}
+.mapwrap.drag{cursor:grabbing}
+.mapsvg{position:absolute;inset:0;width:100%;height:100%;display:block}
+.m-land{fill:var(--map-land)}
+.m-road{fill:none;stroke:var(--map-road);stroke-width:5;stroke-linecap:round}
+.m-ave{fill:none;stroke:var(--map-road);stroke-width:12.5;stroke-linecap:round;stroke-linejoin:round}
+.m-lane{fill:none;stroke:var(--map-road);stroke-width:7.5;stroke-linecap:round;stroke-linejoin:round}
+.m-park{fill:var(--map-park);stroke:var(--map-park);stroke-width:12;stroke-linejoin:round}
+.m-water{fill:var(--map-water)}
+.m-ppath{fill:none;stroke:var(--map-road);stroke-opacity:.72;stroke-width:2.3;stroke-linecap:round}
+.m-rail{fill:none;stroke:var(--map-rail);stroke-width:5}
+.m-raild{fill:none;stroke:var(--map-road);stroke-width:2;stroke-dasharray:8 7}
+.m-st{fill:var(--map-station)}
+.m-stg{fill:var(--map-road)}
+.m-txt{font-family:var(--font-ui);font-size:10.5px;font-weight:500;fill:var(--map-text)}
+.m-cap{font-family:var(--font-ui);font-size:8.6px;font-weight:600;letter-spacing:.9px;fill:var(--map-text);opacity:.85}
+.m-ptxt{font-family:var(--font-ui);font-size:12px;font-weight:500;fill:var(--map-park-text)}
+.m-stt{font-family:var(--font-ui);font-size:11.5px;font-weight:600;fill:var(--map-station)}
+.m-route{fill:none;stroke:var(--accent);stroke-linecap:round;stroke-linejoin:round}
+.pins{position:absolute;inset:0;overflow:hidden;overflow:clip;pointer-events:none}
+.pin{position:absolute;left:0;top:0;width:40px;height:40px;border:0;border-radius:50%;padding:0;background:none;display:grid;place-items:center;pointer-events:auto;will-change:transform}
+.pin-c{--d:18px;width:var(--d);height:var(--d);border-radius:50%;display:block;box-shadow:0 0 0 2px #fff,0 2px 6px rgba(13,18,32,.28);transition:transform .35s cubic-bezier(.3,1.5,.5,1)}
+.pin-c svg{width:100%;height:100%;display:block}
+.pin--m .pin-c{--d:26px}
+.pin--l .pin-c{--d:36px;box-shadow:0 0 0 2.5px #fff,0 4px 12px rgba(13,18,32,.4)}
+.pin--s{z-index:1}.pin--m{z-index:2}.pin--l{z-index:3}.pin.sel{z-index:5}
+.pin-l{position:absolute;left:50%;top:calc(50% + 17px);transform:translateX(-50%);white-space:nowrap;font-size:11px;font-weight:700;line-height:1;padding:3.5px 7px;border-radius:999px;background:var(--card);color:var(--ink);box-shadow:0 1px 4px rgba(13,18,32,.22)}
+.pin--s .pin-l{display:none}
+.pin--l .pin-l{top:calc(50% + 23px);background:var(--ink);color:var(--card);font-size:12px;padding:4.5px 9px}
+.pin.sel .pin-c{transform:scale(1.32)}
+.pin.sel .pin-l{display:block;top:calc(50% + 28px);background:var(--ink);color:var(--card)}
+.pin--s.sel .pin-l{top:calc(50% + 17px)}
+.pin--m.sel .pin-l{top:calc(50% + 22px)}
+.pin--l::before,.pin.sel::before,.pin.sel::after{content:"";position:absolute;left:50%;top:50%;width:64px;height:64px;margin:-32px 0 0 -32px;border-radius:50%;background:rgba(92,126,255,.14);border:1.5px solid rgba(92,126,255,.42);pointer-events:none;animation:ring 2.6s ease-out infinite}
+.pin.sel::after{width:104px;height:104px;margin:-52px 0 0 -52px;animation-delay:.5s}
+@keyframes ring{0%{transform:scale(.72);opacity:0}25%{opacity:1}100%{transform:scale(1.12);opacity:0}}
+.pin--c{width:auto;height:auto;display:flex;align-items:center;gap:6px;padding:4px 11px 4px 4px;border-radius:999px;background:var(--card);font-weight:700;font-size:13px;box-shadow:0 2px 10px rgba(13,18,32,.2);z-index:2}
+.pin--mine{z-index:0}
+.pin--mine i{width:13px;height:13px;border-radius:50%;border:2.5px solid var(--coin-a);background:rgba(255,255,255,.85);box-shadow:0 1px 4px rgba(13,18,32,.2)}
+.pin--gold .pin-c{box-shadow:0 0 0 2px #fff,0 0 0 4.5px var(--gold),0 3px 9px rgba(13,18,32,.32)}
+.pin-k{position:absolute;left:calc(50% + 2.5px);top:calc(50% - 22px);width:17px;height:17px;border-radius:50%;background:var(--ink);color:var(--card);display:grid;place-items:center;box-shadow:0 0 0 1.5px #fff}
+.pin--l .pin-k{left:calc(50% + 6px);top:calc(50% - 26px)}
+.pin-k .ico{width:10px;height:10px;stroke-width:2.8}
+.pin--gold:not(.locked) .pin-k{display:none}
+.pin.pop{animation:pop .5s cubic-bezier(.3,1.6,.5,1) both}
+@keyframes pop{from{opacity:0;scale:.2}to{opacity:1;scale:1}}
+.medot{position:absolute;left:0;top:0;width:0;height:0;z-index:6;pointer-events:none}
+.medot .cone{position:absolute;left:-42px;top:-42px;width:84px;height:84px;border-radius:50%;background:conic-gradient(from -34deg,rgba(45,107,228,0),rgba(45,107,228,.5) 34deg,rgba(45,107,228,0) 68deg);-webkit-mask:radial-gradient(circle,#000 18%,transparent 68%);mask:radial-gradient(circle,#000 18%,transparent 68%);transform:rotate(var(--hd,0deg))}
+.medot .dot{position:absolute;left:-11px;top:-11px;width:22px;height:22px;border-radius:50%;background:var(--accent);border:3.5px solid #fff;box-shadow:0 2px 8px rgba(45,107,228,.55)}
+.maphead{position:absolute;left:14px;right:14px;top:16px;display:flex;align-items:center;gap:10px;z-index:8}
+.camp-pill{flex:1;min-width:0;height:50px;border-radius:25px;background:var(--card);display:flex;align-items:center;gap:10px;padding:0 16px 0 8px;box-shadow:0 1px 2px rgba(13,18,32,.06),0 6px 18px rgba(13,18,32,.12)}
+.cp-t{min-width:0;display:grid}
+.cp-t b{font-weight:600;font-size:14.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cp-t small{font-size:12.5px;color:var(--ink-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.locate{position:absolute;right:14px;bottom:26px;z-index:8;color:var(--accent);transition:opacity .25s,transform .25s}
+.has-sheet .locate{opacity:0;pointer-events:none;transform:translateY(10px)}
+.has-sheet .pins{clip-path:inset(0 0 calc(var(--sh,0px) + 8px) 0)}
+.psheet{position:absolute;left:8px;right:8px;bottom:8px;z-index:9;background:var(--card);border-radius:36px;padding:10px 20px 20px;box-shadow:0 -4px 34px rgba(13,18,32,.16);transform:translateY(118%);transition:transform .5s cubic-bezier(.2,.85,.25,1)}
+.psheet.on{transform:none}
+.ps-h{display:flex;align-items:center;gap:14px;padding:14px 0 16px;border-bottom:1px solid var(--line)}
+.ps-h div{min-width:0}
+.ps-h b{display:block;font-family:var(--font-display);font-weight:700;font-size:23px;letter-spacing:-.01em}
+.ps-h small{font-size:14.5px;color:var(--ink-2)}
+.ps-l{list-style:none;margin:0;padding:14px 0 18px;display:grid;gap:10px}
+.ps-l li{display:flex;align-items:center;gap:11px;font-size:14.5px;color:var(--ink-2)}
+.ps-l li b{color:var(--ink);font-weight:600}
+.ps-l .ico{width:19px;height:19px;stroke-width:1.8;color:var(--ink-2)}
+
+/* ---------- hunt ---------- */
+#hunt{background:var(--surface);overflow:hidden auto;scrollbar-width:none}
+#hunt::-webkit-scrollbar{display:none}
+.hhead{position:relative;padding:20px 70px 0;text-align:center;min-height:64px}
+.hhead .rbtn{position:absolute;left:16px;top:16px}
+.hhead b{display:block;font-weight:700;font-size:17px}
+.hhead small{font-size:13.5px;color:var(--ink-2)}
+.dialwrap{position:relative;width:250px;max-width:66%;aspect-ratio:1;margin:40px auto 0}
+.needle{position:absolute;left:50%;top:-17px;margin-left:-7px;width:0;height:0;border:7px solid transparent;border-top:10px solid var(--ink);border-bottom:0}
+.dial{position:absolute;inset:0;border-radius:50%;background:var(--card);box-shadow:0 24px 48px rgba(13,18,32,.11),0 2px 6px rgba(13,18,32,.06);display:flex;flex-direction:column;align-items:center;justify-content:center}
+.bezel{position:absolute;inset:0;width:100%;height:100%}
+.tk{stroke:var(--line);stroke-width:1.3}
+.tk-b{stroke:var(--ink-3);stroke-width:1.7}
+.tk-n{font-family:var(--font-ui);font-size:11px;font-weight:700;fill:var(--ink-3)}
+.orbit{position:absolute;inset:0;pointer-events:none}
+.orb{position:absolute;left:50%;top:0;width:46px;height:46px;margin:-9px 0 0 -23px;display:grid;place-items:center}
+.orb::before,.orb::after{content:"";position:absolute;inset:-9px;border-radius:50%;border:1.5px solid rgba(92,126,255,.5);background:rgba(92,126,255,.12);animation:ring 1.8s ease-out infinite}
+.orb::after{inset:-20px;animation-delay:.45s}
+.orb svg{position:relative;z-index:1;width:42px}
+.dist{position:relative;font-family:var(--font-display);font-weight:800;font-size:70px;letter-spacing:-.04em;line-height:1;font-variant-numeric:tabular-nums;display:flex;align-items:baseline;gap:7px;margin-top:20px}
+.dist .m{font-size:27px;font-weight:700;letter-spacing:0;color:var(--ink-2)}
+.warm{position:relative;margin-top:7px;font-weight:600;font-size:16px;color:var(--accent)}
+.hint{position:relative;margin-top:2px;font-size:14.5px;color:var(--ink-2)}
+.mini{position:relative;height:190px;margin:40px 16px 0;border-radius:28px;overflow:hidden;background:var(--map-land)}
+.m-zone{fill:rgba(92,126,255,.16);stroke:var(--accent);stroke-opacity:.7;stroke-width:.8}
+.mini-coin{position:absolute;left:0;top:0;width:24px;height:24px;margin:-12px 0 0 -12px;border-radius:50%;box-shadow:0 0 0 2px #fff,0 2px 6px rgba(13,18,32,.28)}
+.mini-coin svg{width:100%;height:100%;display:block}
+.chip-in{position:absolute;left:12px;top:12px;height:32px;padding:0 12px 0 6px;border-radius:16px;background:var(--card);display:flex;align-items:center;gap:7px;font-weight:600;font-size:13px;box-shadow:0 2px 8px rgba(13,18,32,.14);animation:pop .4s cubic-bezier(.3,1.6,.5,1) both}
+.note{margin:14px 36px 20px;text-align:center;font-size:12.5px;line-height:1.5;color:var(--ink-3)}
+
+/* ---------- camera ---------- */
+#ar{color:var(--ar-ink);background:var(--ar-low);opacity:1;transform:none;clip-path:circle(0% at 50% 34%);transition:clip-path .75s cubic-bezier(.7,0,.2,1)}
+#ar.on{clip-path:circle(150% at 50% 34%)}
+.ar-bg{position:absolute;inset:0;overflow:hidden;background:radial-gradient(62% 30% at 50% 45%,rgba(168,206,146,.8),rgba(168,206,146,0) 72%),linear-gradient(180deg,var(--ar-top) 0%,#3a6a3f 22%,var(--ar-mid) 46%,#5b8a4f 66%,var(--ar-low) 100%)}
+.ar-path{position:absolute;left:36%;right:-30%;top:54%;bottom:-12%;background:var(--ar-path);opacity:.82;filter:blur(30px);transform:skewX(-16deg);border-radius:46% 40% 0 0}
+.bk{position:absolute;border-radius:50%;background:rgba(244,243,206,.86);filter:blur(3px);animation:twk 4s ease-in-out infinite}
+@keyframes twk{50%{opacity:.55;transform:scale(.9)}}
+.beam{position:absolute;left:50%;top:0;width:150px;height:52%;margin-left:-75px;background:linear-gradient(180deg,rgba(196,228,255,0),rgba(196,228,255,.42) 62%,rgba(196,228,255,0));filter:blur(16px)}
+#ar .rbtn{position:absolute;left:16px;top:16px;z-index:3;background:rgba(18,36,22,.5);color:var(--ar-ink);box-shadow:none;-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px)}
+.here{position:absolute;left:50%;top:20px;transform:translateX(-50%);z-index:3;height:36px;padding:0 15px 0 12px;border-radius:18px;white-space:nowrap;background:rgba(18,36,22,.5);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);display:flex;align-items:center;gap:8px;font-weight:600;font-size:14.5px}
+.here i{width:8px;height:8px;border-radius:50%;background:#3ee06d;box-shadow:0 0 8px #3ee06d}
+.ar-stage{position:absolute;left:0;right:0;top:60px;bottom:236px;display:flex;flex-direction:column;align-items:center;justify-content:center}
+#arCoin{width:230px;height:230px;flex:none;will-change:transform}
+.gring{position:relative;flex:none;width:156px;height:36px;margin-top:6px;border-radius:50%;border:1.5px solid rgba(255,255,255,.9);box-shadow:0 0 16px rgba(196,232,255,.85),inset 0 0 14px rgba(196,232,255,.5);background:radial-gradient(closest-side,rgba(18,36,22,.5),rgba(18,36,22,0))}
+.gring::before{content:"";position:absolute;left:50%;bottom:50%;width:1px;height:58px;background:linear-gradient(rgba(255,255,255,0),rgba(255,255,255,.7))}
+.spk{position:absolute;width:9px;height:9px;background:#fff;clip-path:polygon(50% 0,60% 40%,100% 50%,60% 60%,50% 100%,40% 60%,0 50%,40% 40%);animation:spk 2.4s ease-in-out infinite}
+@keyframes spk{0%,100%{opacity:0;transform:scale(.4)}50%{opacity:1;transform:scale(1)}}
+.ar-ui{position:absolute;left:0;right:0;bottom:0;height:236px;display:flex;flex-direction:column;align-items:center;transition:opacity .3s}
+.ar-ui b{font-family:var(--font-display);font-weight:700;font-size:25px;letter-spacing:-.01em;text-shadow:0 1px 10px rgba(0,0,0,.25)}
+.ar-ui small{font-size:14.5px;opacity:.85;margin-top:2px;text-shadow:0 1px 8px rgba(0,0,0,.25)}
+.hold{position:relative;width:86px;height:86px;margin-top:22px;border:0;border-radius:50%;background:none;padding:0;touch-action:none}
+.hold svg.prog{position:absolute;inset:0;width:100%;height:100%;transform:rotate(-90deg)}
+.hold .trk{fill:rgba(255,255,255,.12);stroke:rgba(255,255,255,.4);stroke-width:3}
+.hold .barc{fill:none;stroke:#fff;stroke-width:3.5;stroke-linecap:round;stroke-dasharray:238.8;stroke-dashoffset:238.8}
+.hold-c{position:absolute;inset:11px;border-radius:50%;background:#fff;display:grid;place-items:center;transition:transform .2s}
+.hold-c svg{width:34px}
+.hold.down .hold-c{transform:scale(.9)}
+.hold-l{margin-top:10px;font-weight:600;font-size:14.5px;text-shadow:0 1px 8px rgba(0,0,0,.3)}
+#ar.claimed .ar-ui,#ar.claimed .gring{opacity:0;pointer-events:none}
+.fsheet{position:absolute;left:8px;right:8px;bottom:8px;z-index:5;background:var(--card);color:var(--ink);border-radius:36px;padding:58px 16px 16px;text-align:center;transform:translateY(125%);transition:transform .6s cubic-bezier(.2,.95,.25,1)}
+.fsheet.on{transform:none}
+.f-coin{position:absolute;left:50%;top:-46px;width:92px;margin-left:-46px;filter:drop-shadow(0 8px 18px rgba(13,18,32,.35))}
+.fsheet h2{font-family:var(--font-display);font-weight:700;font-size:26px;letter-spacing:-.015em}
+.fsheet .from{font-size:15px;margin-top:3px}
+.okchip{display:inline-flex;align-items:center;gap:5px;margin-top:9px;height:28px;padding:0 11px 0 8px;border-radius:14px;background:var(--good-soft);color:var(--good);font-weight:600;font-size:13.5px}
+.okchip .ico{width:15px;height:15px;stroke-width:2.6}
+.rows{margin-top:16px;background:var(--well);border-radius:24px;padding:2px 16px;text-align:left}
+.row{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:50px;font-size:15px}
+.row + .row{border-top:1px solid var(--line)}
+.row > span{color:var(--ink-2);display:flex;align-items:center;gap:11px;min-width:0}
+.row > b{font-weight:600;display:flex;align-items:center;gap:5px;white-space:nowrap}
+.row .ico{width:15px;height:15px}
+.f-btns{display:grid;grid-template-columns:auto 1fr;gap:10px;margin-top:14px}
+.btn2{height:56px;padding:0 22px;border:0;border-radius:28px;background:var(--well);font-weight:600;font-size:15.5px;display:flex;align-items:center;gap:8px}
+.btn2 .ico{width:19px;height:19px}
+.f-note{margin-top:10px;font-size:12px;color:var(--ink-3)}
+
+/* ---------- hide money sheet ---------- */
+.scrim{position:absolute;inset:0;z-index:20;background:rgba(13,18,32,.34);opacity:0;transition:opacity .35s}
+.scrim.on{opacity:1}
+.sheet{position:absolute;left:0;right:0;bottom:0;z-index:21;max-height:95%;display:flex;flex-direction:column;background:var(--surface);border-radius:36px 36px 0 0;box-shadow:0 -10px 40px rgba(13,18,32,.18);transform:translateY(104%);transition:transform .55s cubic-bezier(.2,.85,.25,1)}
+.sheet.on{transform:none}
+.sh-top{position:relative;flex:none;padding:10px 16px 6px;text-align:center}
+.sh-top .rbtn{position:absolute;left:16px;top:18px;width:40px;height:40px;box-shadow:none;background:var(--well)}
+.sh-top b{display:block;font-weight:600;font-size:16px;margin-top:16px;line-height:24px}
+.sh-body{flex:1 1 auto;min-height:0;overflow-y:auto;scrollbar-width:none;padding:8px 16px 4px;display:flex;flex-direction:column;gap:10px;-webkit-mask-image:linear-gradient(to bottom,transparent 0,#000 12px);mask-image:linear-gradient(to bottom,transparent 0,#000 12px)}
+.sh-body::-webkit-scrollbar{display:none}
+.amt{text-align:center;padding:4px 0 2px}
+.amt-n{font-family:var(--font-display);font-weight:800;font-size:50px;letter-spacing:-.035em;line-height:1.05;font-variant-numeric:tabular-nums}
+.amt-n .u{font-family:var(--font-ui);font-size:20px;font-weight:600;letter-spacing:0;color:var(--ink-2);margin-left:8px}
+.amt small{display:block;font-size:14px;color:var(--ink-2);margin-top:2px}
+.seg{display:flex;justify-content:center;gap:6px;margin-top:10px}
+.seg button{height:36px;min-width:64px;padding:0 14px;border:0;border-radius:18px;background:var(--well);color:var(--ink-2);font-weight:600;font-size:14px}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--card)}
+.seg button:disabled{opacity:.38;cursor:default}
+.well{background:var(--well);border-radius:24px;padding:4px 16px}
+.well .row{min-height:46px}
+.well .row > span{color:var(--ink)}
+.well.rules .row > span{color:var(--ink-2)}
+.areas{display:grid;grid-template-columns:104px 1fr;gap:16px;align-items:center;padding:14px 16px 14px 14px}
+.thumb{width:104px;height:104px;display:block}
+.t-bg{fill:var(--line)}
+.t-park{fill:var(--map-park)}
+.t-rail{fill:none;stroke:var(--map-rail);stroke-width:2.4}
+.t-raild{fill:none;stroke:var(--card);stroke-width:1;stroke-dasharray:3 3}
+.t-z{fill:rgba(92,126,255,.18);stroke:var(--coin-b);stroke-width:.8;stroke-dasharray:2 2}
+.t-d{fill:var(--accent)}
+.eyebrow{font-size:11.5px;font-weight:600;letter-spacing:.09em;color:var(--ink-3);margin-bottom:4px}
+.arow{display:flex;justify-content:space-between;gap:10px;font-size:15px;line-height:1.9}
+.arow b{font-weight:600}
+.arow span{color:var(--ink-2)}
+.sh-fine{text-align:center;font-size:12.5px;line-height:1.5;color:var(--ink-2);padding:0 18px}
+.sh-foot{flex:none;padding:10px 16px 16px}
+.approve{position:absolute;left:50%;top:42%;z-index:30;width:136px;height:136px;margin:-68px 0 0 -68px;border-radius:32px;background:rgba(244,246,250,.84);-webkit-backdrop-filter:blur(18px);backdrop-filter:blur(18px);box-shadow:0 18px 50px rgba(13,18,32,.2);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;font-size:13px;font-weight:600;color:var(--ink);opacity:0;transform:scale(.82);pointer-events:none;transition:opacity .25s,transform .3s cubic-bezier(.3,1.4,.5,1)}
+.approve.on{opacity:1;transform:none}
+.approve svg{width:60px;height:60px;fill:none;stroke:var(--ink-2);stroke-width:3;stroke-linecap:round;stroke-linejoin:round}
+.approve .ap-c{opacity:0;stroke:var(--good);stroke-width:4;transition:opacity .2s}
+.approve .ap-w{transition:opacity .2s}
+.approve.ok .ap-c{opacity:1}
+.approve.ok .ap-w{opacity:0}
+
+#fx{position:absolute;inset:0;width:100%;height:100%;z-index:40;pointer-events:none}
+.toast{position:absolute;left:50%;bottom:28px;z-index:50;max-width:calc(100% - 40px);width:max-content;padding:11px 17px;border-radius:20px;background:rgba(13,18,32,.93);color:#fff;font-size:13.5px;font-weight:500;line-height:1.4;text-align:center;opacity:0;transform:translate(-50%,16px);pointer-events:none;transition:opacity .28s,transform .28s}
+.toast.on{opacity:1;transform:translate(-50%,0)}
+
+.logo{display:block;flex:none;border-radius:50%;background:url("data:image/webp;base64,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") center/cover no-repeat;filter:drop-shadow(0 3px 8px rgba(40,56,200,.3))}
+
+@media (prefers-reduced-motion:reduce){
+  .screen,.psheet,.fsheet,.sheet,.scrim,#ar{transition-duration:.01s}
+  .pin--l::before,.pin.sel::before,.pin.sel::after,.orb::before,.orb::after,.bk,.spk,.pin.pop,.chip-in{animation:none}
+  .pin.sel::before,.pin.sel::after,.pin--l::before{opacity:.8}
+}
+</style>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <defs>
+    <linearGradient id="gBars" gradientUnits="userSpaceOnUse" x1="-.575" y1=".47" x2=".575" y2="-.48"><stop offset="0" style="stop-color:var(--coin-a)"/><stop offset=".5" style="stop-color:var(--coin-b)"/><stop offset="1" style="stop-color:var(--coin-c)"/></linearGradient>
+    <linearGradient id="gEdge" x1="0" y1="0" x2="1" y2="0"><stop offset="0" style="stop-color:var(--coin-e1)"/><stop offset=".5" style="stop-color:var(--coin-e2)"/><stop offset="1" style="stop-color:var(--coin-e3)"/></linearGradient>
+    <radialGradient id="gShine" cx=".3" cy=".2" r=".8"><stop offset="0" stop-color="#fff" stop-opacity=".2"/><stop offset=".62" stop-color="#fff" stop-opacity="0"/></radialGradient>
+    <g id="solBars" fill="url(#gBars)" stroke="url(#gBars)" stroke-width=".05" stroke-linejoin="round">
+      <path d="M-.36 -.45H.55L.36 -.264H-.55Z"/>
+      <path d="M-.55 -.093H.36L.55 .093H-.36Z"/>
+      <path d="M-.36 .264H.55L.36 .45H-.55Z"/>
+    </g>
+    <symbol id="coin" viewBox="0 0 40 43">
+      <circle cx="20" cy="23" r="19.5" fill="url(#gEdge)"/>
+      <circle cx="20" cy="20" r="19.5" style="fill:var(--coin-face)"/>
+      <circle cx="20" cy="20" r="19.5" fill="url(#gShine)"/>
+      <circle cx="20" cy="20" r="18.3" fill="none" stroke="#fff" stroke-opacity=".13" stroke-width=".9"/>
+      <use href="#solBars" transform="translate(20 20) scale(19.5)"/>
+    </symbol>
+    <symbol id="coinf" viewBox="0 0 40 40">
+      <circle cx="20" cy="20" r="20" style="fill:var(--coin-face)"/>
+      <circle cx="20" cy="20" r="20" fill="url(#gShine)"/>
+      <use href="#solBars" transform="translate(20 20) scale(20)"/>
+    </symbol>
+    <symbol id="i-x" viewBox="0 0 24 24"><path d="M6.5 6.5l11 11M17.5 6.5l-11 11"/></symbol>
+    <symbol id="i-back" viewBox="0 0 24 24"><path d="M14.5 5.5L8 12l6.5 6.5"/></symbol>
+    <symbol id="i-chev" viewBox="0 0 24 24"><path d="M9.5 5.5L16 12l-6.5 6.5"/></symbol>
+    <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+    <symbol id="i-compass" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M15.6 8.4l-2.1 5.1-5.1 2.1 2.1-5.1z"/></symbol>
+    <symbol id="i-share" viewBox="0 0 24 24"><path d="M12 14.5V4M8 7.5l4-4 4 4M6 11.5v8h12v-8"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></symbol>
+    <symbol id="i-bolt" viewBox="0 0 24 24"><path d="M13.2 2.5L5 13.5h5.6L9.8 21.5 19 10h-6z" fill="currentColor" stroke="none"/></symbol>
+    <symbol id="i-spark" viewBox="0 0 24 24"><path d="M10 4c.7 4.6 2.4 6.3 7 7-4.6.7-6.3 2.4-7 7-.7-4.6-2.4-6.3-7-7 4.6-.7 6.3-2.4 7-7zM18.5 15.5v5M16 18h5"/></symbol>
+    <symbol id="i-target" viewBox="0 0 24 24"><circle cx="12" cy="12" r="6.5"/><circle cx="12" cy="12" r="1.2" fill="currentColor"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3"/></symbol>
+    <symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 3.2l7 2.8v5.4c0 4.4-2.9 7.8-7 9.2-4.1-1.4-7-4.8-7-9.2V6z"/><path d="M9 12.2l2.2 2.2 4-4.2"/></symbol>
+    <symbol id="i-wallet" viewBox="0 0 24 24"><rect x="3.5" y="6.5" width="17" height="12.5" rx="3"/><path d="M3.5 10.5h17"/><circle cx="16.4" cy="14.8" r="1.1" fill="currentColor" stroke="none"/></symbol>
+    <symbol id="i-locate" viewBox="0 0 24 24"><path d="M20 4L4.5 10.6l6.3 2.6 2.6 6.3z"/></symbol>
+    <symbol id="i-lock" viewBox="0 0 24 24"><rect x="5" y="10.5" width="14" height="10" rx="2.5"/><path d="M8 10.5V8a4 4 0 018 0v2.5"/></symbol>
+    <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></symbol>
+    <g id="mapArt"></g>
+  </defs>
+</svg>
+
+<div class="stage">
+  <aside class="intro">
+    <h1><span class="logo" role="img" aria-label="SolanaGO logo"></span><span>Solana<i>GO</i></span></h1>
+    <p class="lede">Trading fees get hidden as SOL in the real world. Someone has to walk there to claim it.</p>
+    <ol>
+      <li>Tap the alert, then pick a drop on the map.</li>
+      <li>Start the hunt and follow the compass.</li>
+      <li>Hold to claim when the coin appears.</li>
+      <li>Pick a holder level on the home screen to unlock gold drops.</li>
+      <li>Tap + on the map to hide your own.</li>
+    </ol>
+    <button class="ghost" id="resetBtn2" type="button">Restart demo</button>
+    <p class="fineprint">Prototype with play SOL, a simulated walk and simulated <i class="tkr">$SolanaGO</i> holdings. Nothing moves on-chain. Not affiliated with the Solana Foundation.</p>
+  </aside>
+
+  <div class="device">
+    <div class="phone" id="phone">
+
+      <!-- HOME -->
+      <section class="screen on" id="home" aria-label="Home">
+        <div class="home-glow"></div>
+        <div class="scroll">
+          <header class="acct">
+            <b class="brand"><span class="logo" role="img" aria-label="SolanaGO logo"></span><span>Solana<i>GO</i></span></b><span class="tag">Play money</span><span class="avatar me" title="you.sol">Y</span>
+          </header>
+          <button class="alert" id="alertBtn" type="button">
+            <svg class="coin" width="38"><use href="#coin"/></svg>
+            <span class="alert-t"><b id="alertTitle">A 1 SOL drop is 270 m away</b><small id="alertSub">Yoyogi Park · $SolanaGO fees</small></span>
+            <svg class="ico"><use href="#i-chev"/></svg>
+          </button>
+          <div class="bal">
+            <span class="lbl">Balance</span>
+            <div class="bal-n"><span id="balInt">153</span><span class="dec" id="balDec">.03</span><span class="unit">SOL</span></div>
+          </div>
+          <div class="acts">
+            <button class="act" id="goHunt" type="button"><span class="act-i"><svg class="ico"><use href="#i-compass"/></svg></span><span>Find drops<small>Open the map</small></span></button>
+            <button class="act" id="goHide" type="button"><span class="act-i"><svg class="ico"><use href="#i-plus"/></svg></span><span>Hide money<small>Start your own drop</small></span></button>
+          </div>
+          <h2 class="sec">Live near you</h2>
+          <button class="camp" id="campCard" type="button">
+            <svg class="coinf" width="34" height="34"><use href="#coinf"/></svg>
+            <span class="camp-t"><b>Fee drop · Tokyo</b><small id="campLine2">100 SOL · 612 of 1,000 left</small></span>
+            <svg class="ico"><use href="#i-chev"/></svg>
+            <span class="bar"><i id="campBar" style="width:38.8%"></i></span>
+            <span class="when">Funded by <i class="tkr">$SolanaGO</i> trading fees</span>
+          </button>
+          <h2 class="sec"><b>Funded by trading fees</b><span>Example data</span></h2>
+          <div class="flow">
+            <div class="rows">
+              <div class="row"><span>Trading fees collected</span><b><span id="feeIn">412.60</span> SOL</b></div>
+              <div class="row"><span>Hidden as drops</span><b><span id="feeOut">400.00</span> SOL</b></div>
+              <div class="row"><span>Claimed by hunters</span><b><span id="feeClaimed">251.35</span> SOL</b></div>
+            </div>
+            <div class="next">
+              <svg class="ico"><use href="#i-clock"/></svg>
+              <span class="nx"><small>Next batch</small><b><span id="nextAmt">12.60</span> SOL so far</b></span>
+              <span class="nx nx-r"><small id="nextLbl">Goes live in</small><b id="nextIn">00:00:00</b></span>
+            </div>
+            <p class="fine">Creator fees from <i class="tkr">$SolanaGO</i> trades are claimed on a schedule and hidden as drops. In the live app each step links to its transaction.</p>
+          </div>
+          <h2 class="sec">Holder perks</h2>
+          <div class="perks">
+            <div class="hold-top">
+              <div><small>Your <i class="tkr">$SolanaGO</i></small><b id="holdAmt">0</b></div>
+              <span class="tierchip" id="tierChip">Not holding</span>
+            </div>
+            <div class="try">
+              <small>Prototype: pick a holding to try the perks</small>
+              <div class="seg seg-hold" id="holdSeg" role="group" aria-label="Holding to simulate">
+                <button type="button" data-hold="0" aria-pressed="true">None</button>
+                <button type="button" data-hold="100000" aria-pressed="false">100K</button>
+                <button type="button" data-hold="1000000" aria-pressed="false">1M</button>
+                <button type="button" data-hold="5000000" aria-pressed="false">5M</button>
+              </div>
+            </div>
+            <div class="perk" data-need="1"><span class="pk-i"><svg class="ico"><use href="#i-clock"/></svg></span><span class="pk-t"><b>15 min head start</b><small>See each batch first</small></span><span class="pk-n">100K+</span></div>
+            <div class="perk" data-need="2"><span class="pk-i"><svg class="ico"><use href="#i-spark"/></svg></span><span class="pk-t"><b>Holder-only drops</b><small>Gold pins only holders can claim</small></span><span class="pk-n">1M+</span></div>
+            <div class="perk" data-need="3"><span class="pk-i"><svg class="ico"><use href="#i-target"/></svg></span><span class="pk-t"><b>Claim from 50 m</b><small>Everyone else needs 30 m</small></span><span class="pk-n">5M+</span></div>
+            <p class="fine">The live app reads this from your wallet.</p>
+          </div>
+          <div id="mineWrap" hidden>
+            <h2 class="sec" style="margin-bottom:12px">Your drops</h2>
+            <div class="camp">
+              <span class="avatar me">Y</span>
+              <span class="camp-t"><b>Your Tokyo drop</b><small id="mineLine"></small></span>
+              <span></span>
+              <span class="when" id="mineWhen"></span>
+            </div>
+          </div>
+          <h2 class="sec">Found <span id="foundSum"></span></h2>
+          <div class="list" id="foundList"><div class="empty">Nothing yet. The closest drop is a short walk away.</div></div>
+          <p class="fine">Prototype with play SOL, a simulated walk and simulated <i class="tkr">$SolanaGO</i> holdings. Nothing moves on-chain. Not affiliated with the Solana Foundation. <button class="link" id="resetBtn" type="button">Restart demo</button></p>
+        </div>
+      </section>
+
+      <!-- MAP -->
+      <section class="screen" id="map" aria-label="Drop map" hidden>
+        <div class="mapwrap" id="mapWrap">
+          <svg class="mapsvg" id="mapSvg" preserveAspectRatio="none" aria-hidden="true"><use href="#mapArt"/><path id="route" class="m-route" d=""/></svg>
+          <div class="pins" id="pins"></div>
+        </div>
+        <header class="maphead">
+          <button class="rbtn" id="mapBack" type="button" aria-label="Back to home"><svg class="ico"><use href="#i-back"/></svg></button>
+          <div class="camp-pill"><svg class="coinf" width="34" height="34"><use href="#coinf"/></svg><span class="cp-t"><b>Fee drop · Tokyo</b><small id="campLine">100 SOL · 612 of 1,000 left</small></span></div>
+          <button class="rbtn" id="mapPlus" type="button" aria-label="Hide money"><svg class="ico"><use href="#i-plus"/></svg></button>
+        </header>
+        <button class="rbtn locate" id="recenter" type="button" aria-label="Center on me"><svg class="ico"><use href="#i-locate"/></svg></button>
+        <div class="psheet" id="pinSheet" inert>
+          <div class="grab"></div>
+          <div class="ps-h">
+            <svg class="coin" width="54"><use href="#coin"/></svg>
+            <div><b id="psTitle">1 SOL drop</b><small id="psSub">Yoyogi Park · 270 m · 4 min walk</small></div>
+          </div>
+          <ul class="ps-l">
+            <li><svg class="ico"><use href="#i-spark"/></svg><span id="psLeft"><b>7 of 10</b> big drops still hidden</span></li>
+            <li><svg class="ico"><use href="#i-target"/></svg><span id="psReach">Exact spot shows up <b>30 m</b> away</span></li>
+            <li><svg class="ico"><use href="#i-shield"/></svg><span>Only ever in public places</span></li>
+          </ul>
+          <button class="cta" id="startHunt" type="button" aria-disabled="false"><svg class="ico"><use id="startIco" href="#i-compass"/></svg><span id="startLbl">Start the hunt</span></button>
+        </div>
+      </section>
+
+      <!-- HUNT -->
+      <section class="screen" id="hunt" aria-label="Hunting" hidden>
+        <header class="hhead">
+          <button class="rbtn" id="huntClose" type="button" aria-label="Stop hunting"><svg class="ico"><use href="#i-x"/></svg></button>
+          <b id="huntTitle">Hunting 1 SOL</b><small id="huntPlace">Yoyogi Park</small>
+        </header>
+        <div class="dialwrap">
+          <div class="needle"></div>
+          <div class="dial">
+            <svg class="bezel" id="bezel" viewBox="-125 -125 250 250" aria-hidden="true"></svg>
+            <div class="orbit" id="orbit"><span class="orb" id="orb"><svg class="coin"><use href="#coin"/></svg></span></div>
+            <div class="dist"><span id="distN">270</span><span class="m">m</span></div>
+            <div class="warm" id="warm">Getting warmer</div>
+            <div class="hint" id="hint" aria-live="polite">A little to your left</div>
+          </div>
+        </div>
+        <div class="mini" id="mini">
+          <svg class="mapsvg" id="miniSvg" preserveAspectRatio="none" aria-hidden="true"><use href="#mapArt"/><circle id="zone" class="m-zone" r="30"/><path id="miniRoute" class="m-route" d=""/></svg>
+          <div class="pins">
+            <span class="mini-coin" id="miniCoin"><svg><use href="#coinf"/></svg></span>
+            <span class="medot" id="miniMe"><i class="cone"></i><i class="dot"></i></span>
+          </div>
+          <span class="chip-in" id="inCircle" hidden><svg class="coinf" width="20" height="20"><use href="#coinf"/></svg>It's in the circle</span>
+        </div>
+        <p class="note">Keep your eyes up while you walk. Your phone buzzes as you get closer, and the camera opens <span id="noteReach">30</span>&nbsp;m away.</p>
+      </section>
+
+      <!-- CAMERA -->
+      <section class="screen" id="ar" aria-label="Claim the drop" hidden>
+        <div class="ar-bg">
+          <i class="ar-path"></i>
+          <i class="bk" style="left:38%;top:5%;width:34px;height:34px"></i>
+          <i class="bk" style="left:74%;top:8%;width:24px;height:24px;animation-delay:-1.2s"></i>
+          <i class="bk" style="left:58%;top:13%;width:28px;height:28px;animation-delay:-2.1s"></i>
+          <i class="bk" style="left:17%;top:21%;width:22px;height:22px;animation-delay:-.6s"></i>
+          <i class="bk" style="left:9%;top:35%;width:18px;height:18px;animation-delay:-3s"></i>
+          <i class="beam"></i>
+        </div>
+        <button class="rbtn" id="arClose" type="button" aria-label="Close camera"><svg class="ico"><use href="#i-x"/></svg></button>
+        <span class="here"><i></i>You're here</span>
+        <div class="ar-stage">
+          <canvas id="arCoin" aria-hidden="true"></canvas>
+          <div class="gring"></div>
+          <i class="spk" style="left:24%;top:30%"></i>
+          <i class="spk" style="left:76%;top:38%;animation-delay:-.8s;width:7px;height:7px"></i>
+          <i class="spk" style="left:70%;top:20%;animation-delay:-1.5s;width:6px;height:6px"></i>
+          <i class="spk" style="left:29%;top:62%;animation-delay:-1.1s;width:7px;height:7px"></i>
+        </div>
+        <div class="ar-ui">
+          <b id="arTitle">1 SOL drop</b>
+          <small id="arSub">Paid by $SolanaGO fees · Yoyogi Park</small>
+          <button class="hold" id="holdBtn" type="button" aria-label="Hold to claim">
+            <svg class="prog" viewBox="0 0 86 86" aria-hidden="true"><circle class="trk" cx="43" cy="43" r="38"/><circle class="barc" id="holdBar" cx="43" cy="43" r="38"/></svg>
+            <span class="hold-c"><svg class="coin"><use href="#coin"/></svg></span>
+          </button>
+          <span class="hold-l" id="holdLbl">Hold to claim</span>
+        </div>
+        <div class="fsheet" id="found" inert>
+          <svg class="coin f-coin"><use href="#coin"/></svg>
+          <h2 id="fTitle">You found 1 SOL</h2>
+          <p class="from" id="fFrom">1 SOL from $SolanaGO fees</p>
+          <span class="okchip"><svg class="ico"><use href="#i-check"/></svg>In your wallet</span>
+          <div class="rows">
+            <div class="row"><span>Found in</span><b id="fPlace">Yoyogi Park</b></div>
+            <div class="row"><span>Confirmed in</span><b><svg class="ico"><use href="#i-bolt"/></svg>0.4 seconds</b></div>
+            <div class="row"><span>Still hidden in Tokyo</span><b id="fLeft">611 drops</b></div>
+          </div>
+          <div class="f-btns">
+            <button class="btn2" id="shareBtn" type="button"><svg class="ico"><use href="#i-share"/></svg>Share</button>
+            <button class="cta" id="keepBtn" type="button">Keep hunting</button>
+          </div>
+          <p class="f-note">Prototype. Play SOL, nothing was sent.</p>
+        </div>
+      </section>
+
+      <!-- HIDE MONEY -->
+      <div class="scrim" id="scrim" hidden></div>
+      <section class="sheet" id="hide" aria-label="Hide money" inert>
+        <div class="sh-top">
+          <div class="grab"></div>
+          <button class="rbtn" id="hideClose" type="button" aria-label="Close"><svg class="ico"><use href="#i-x"/></svg></button>
+          <b>Hide money</b>
+        </div>
+        <div class="sh-body" id="hideBody">
+          <div class="amt">
+            <div class="amt-n"><span id="amtN">100</span><span class="u">SOL</span></div>
+            <small id="amtSub">hidden in 1,000 drops</small>
+            <div class="seg" id="amtSeg" role="group" aria-label="Amount to hide">
+              <button type="button" data-amt="100" aria-pressed="false">1 SOL</button>
+              <button type="button" data-amt="1000" aria-pressed="false">10 SOL</button>
+              <button type="button" data-amt="10000" aria-pressed="true">100 SOL</button>
+            </div>
+          </div>
+          <div class="well" id="tiers"></div>
+          <div class="well areas">
+            <svg class="thumb" viewBox="0 0 100 100" aria-hidden="true">
+              <rect width="100" height="100" rx="18" class="t-bg"/>
+              <ellipse cx="24" cy="52" rx="15" ry="12" class="t-park"/>
+              <path d="M54 2C40 30 44 62 80 96" class="t-rail"/>
+              <path d="M54 2C40 30 44 62 80 96" class="t-raild"/>
+              <g id="zones"></g>
+            </svg>
+            <div>
+              <div class="eyebrow">TOKYO</div>
+              <div class="arow"><b>Shinjuku</b><span id="ar0">340 drops</span></div>
+              <div class="arow"><b>Harajuku</b><span id="ar1">330 drops</span></div>
+              <div class="arow"><b>Shibuya</b><span id="ar2">330 drops</span></div>
+            </div>
+          </div>
+          <div class="well rules">
+            <div class="row"><span>When</span><b id="whenTxt">Sat · 10:00–18:00</b></div>
+            <div class="row"><span>Each person</span><b>One drop</b></div>
+            <div class="row"><span>Not found by 18:00</span><b>Back to you</b></div>
+          </div>
+          <p class="sh-fine">Drops only go in public places. Roads, rail lines and private property are left out for you.</p>
+        </div>
+        <div class="sh-foot">
+          <button class="cta" id="hideBtn" type="button"><svg class="ico"><use href="#i-wallet"/></svg><span id="hideLbl">Hide 100 SOL</span></button>
+        </div>
+        <div class="approve" id="approve" aria-hidden="true">
+          <svg viewBox="0 0 56 56"><path d="M6 18v-6a6 6 0 016-6h6M38 6h6a6 6 0 016 6v6M50 38v6a6 6 0 01-6 6h-6M18 50h-6a6 6 0 01-6-6v-6"/><g class="ap-w"><rect x="17" y="20.5" width="22" height="16" rx="4"/><path d="M17 26h22"/></g><path class="ap-c" d="M19 29l6.5 6.5L38 22"/></svg>
+          <span id="apLbl">Approve in wallet</span>
+        </div>
+      </section>
+
+      <canvas id="fx" aria-hidden="true"></canvas>
+      <div class="toast" id="toast" role="status"></div>
+    </div>
+    <p class="caption">Prototype · play SOL · simulated walk</p>
+  </div>
+</div>
+
+<script>
+(() => {
+'use strict';
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
+const lerp = (a, b, t) => a + (b - a) * t;
+const outCubic = t => 1 - Math.pow(1 - t, 3);
+const ioCubic = t => t < .5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const dist = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
+function rng(seed){ return () => { seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+
+/* ---------- one animation loop for everything ---------- */
+const tickers = new Set(); let raf = 0, last = 0;
+function frame(now){ const dt = Math.min(.05, Math.max(0, (now - last) / 1000)); last = now; tickers.forEach(fn => fn(dt, now / 1000)); raf = tickers.size ? requestAnimationFrame(frame) : 0; }
+function addTicker(fn){ tickers.add(fn); if (!raf){ last = performance.now(); raf = requestAnimationFrame(frame); } return () => tickers.delete(fn); }
+function tween(ms, step, done){ let t = 0; const stop = addTicker(dt => { t += dt * 1000 / Math.max(1, ms); if (t >= 1){ stop(); step(1); done && done(); } else step(t); }); return stop; }
+
+/* ---------- money (hundredths of a SOL, so no float drift) ---------- */
+const nf = new Intl.NumberFormat('en-US', {maximumFractionDigits: 2});
+const sol = c => nf.format(c / 100);
+const int = n => n.toLocaleString('en-US');
+const TIERS = {s: {v: 5, name: 'small', of: 900, left: 547}, m: {v: 50, name: 'mid', of: 90, left: 58}, l: {v: 100, name: 'big', of: 10, left: 7}};
+const PLANS = {
+  100:   {drops: 11,   tiers: [[10, 5], [1, 50]],              areas: [4, 4, 3]},
+  1000:  {drops: 100,  tiers: [[90, 5], [9, 50], [1, 100]],    areas: [34, 33, 33]},
+  10000: {drops: 1000, tiers: [[900, 5], [90, 50], [10, 100]], areas: [340, 330, 330]}
+};
+
+/* ---------- saved state (per browser, optional) ---------- */
+const KEY = 'moneydrops.v1';
+const fresh = () => ({bal: 15303, found: [], mine: null, hold: 0});
+let S = fresh();
+try { const o = JSON.parse(localStorage.getItem(KEY) || 'null'); if (o && typeof o.bal === 'number' && Array.isArray(o.found)) S = Object.assign(fresh(), o); } catch (e) {}
+const save = () => { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {} };
+
+/* ---------- the coin behind the drops ---------- */
+const TOKEN = {ticker: 'SolanaGO', levels: [100000, 1000000, 5000000]};      // holdings needed for tier 1, 2, 3
+const T = '$' + TOKEN.ticker;
+const tk = n => n >= 1e6 ? (n / 1e6) + 'M' : (n / 1e3) + 'K';
+const tier = () => TOKEN.levels.filter(l => (S.hold || 0) >= l).length;
+const canGold = () => tier() >= 2;                                         // holder-only drops
+const reach = () => tier() >= 3 ? 50 : 30;                                 // metres at which the camera opens
+const FEES = {in: 41260, out: 40000, claimed: 25135};                      // example lifetime totals, hundredths of a SOL
+
+/* ---------- the neighbourhood (metres; x east, y south) ---------- */
+const ROT = 14 * Math.PI / 180;
+const U = {x: Math.cos(ROT), y: Math.sin(ROT)}, V = {x: -Math.sin(ROT), y: Math.cos(ROT)};
+const O = {x: 217, y: 305};                                   // where Omotesando meets the tracks
+const g2w = (a, b) => ({x: O.x + a * U.x + b * V.x, y: O.y + a * U.y + b * V.y});
+const w2g = p => { const dx = p.x - O.x, dy = p.y - O.y; return {a: dx * U.x + dy * U.y, b: dx * V.x + dy * V.y}; };
+const WORLD = {x0: -220, y0: -180, x1: 660, y1: 1120};
+const A_STEP = 46.5, B_STEP = 36, A_MAIN = 122, A_DORI = 215;
+const RAIL = [[196, -180], [199, 0], [205, 221], [230, 451], [265, 690], [300, 900], [335, 1120]];
+const YOYOGI = [[-220, 197], [176, 197], [190, 206], [194, 300], [203, 400], [222, 500], [243, 585], [236, 612], [205, 630], [-220, 712]];
+const MEIJI = [[-220, -180], [178, -180], [184, 60], [186, 164], [176, 180], [-220, 180]];
+const GATE = {x: 192, y: 292};
+const inPoly = (p, poly) => { let c = false; for (let i = 0, j = poly.length - 1; i < poly.length; j = i++){ const xi = poly[i][0], yi = poly[i][1], xj = poly[j][0], yj = poly[j][1]; if ((yi > p.y) !== (yj > p.y) && p.x < (xj - xi) * (p.y - yi) / (yj - yi) + xi) c = !c; } return c; };
+const inPark = p => inPoly(p, YOYOGI) || inPoly(p, MEIJI);
+function placeOf(p){
+  if (inPoly(p, MEIJI)) return 'Meiji Jingu';
+  if (inPoly(p, YOYOGI)) return 'Yoyogi Park';
+  const g = w2g(p);
+  if (p.y > 640) return 'Shibuya';
+  if (Math.abs(g.a - A_DORI) < 26) return 'Meiji-dori';
+  if (g.b < 0) return g.a < 100 ? 'Harajuku' : 'Jingumae';
+  return g.a < 70 ? 'Harajuku' : 'Omotesando';
+}
+function spline(pts){ let d = `M${pts[0][0]} ${pts[0][1]}`; for (let i = 0; i < pts.length - 1; i++){ const p0 = pts[i - 1] || pts[i], p1 = pts[i], p2 = pts[i + 1], p3 = pts[i + 2] || p2; d += `C${(p1[0] + (p2[0] - p0[0]) / 6).toFixed(1)} ${(p1[1] + (p2[1] - p0[1]) / 6).toFixed(1)} ${(p2[0] - (p3[0] - p1[0]) / 6).toFixed(1)} ${(p2[1] - (p3[1] - p1[1]) / 6).toFixed(1)} ${p2[0]} ${p2[1]}`; } return d; }
+const poly = pts => 'M' + pts.map(p => p[0] + ' ' + p[1]).join('L') + 'Z';
+
+function buildMap(){
+  const r = rng(7), f = n => n.toFixed(1); let d = '';
+  const aL = [], bL = [];
+  for (let k = -15; k <= 11; k++) aL.push(A_MAIN + k * A_STEP);
+  for (let k = -17; k <= 25; k++) bL.push(k * B_STEP);
+  const inW = p => p.x > WORLD.x0 - 40 && p.x < WORLD.x1 + 40 && p.y > WORLD.y0 - 40 && p.y < WORLD.y1 + 40;
+  const seg = (p, q) => { d += `M${f(p.x)} ${f(p.y)}L${f(q.x)} ${f(q.y)}`; };
+  aL.forEach(a => { const key = Math.abs(a - A_MAIN) < 1 || Math.abs(a - A_DORI) < 1; for (let j = 0; j < bL.length - 1; j++){ const p = g2w(a, bL[j]), q = g2w(a, bL[j + 1]); const skip = !key && r() < .12; if ((inW(p) || inW(q)) && !skip) seg(p, q); } });
+  bL.forEach(b => { for (let i = 0; i < aL.length - 1; i++){ const p = g2w(aL[i], b), q = g2w(aL[i + 1], b); const skip = b !== 0 && r() < .1; if ((inW(p) || inW(q)) && !skip) seg(p, q); } });
+  const e0 = g2w(6, 0), e1 = g2w(640, 0), m0 = g2w(A_DORI, -620), m1 = g2w(A_DORI, 900);
+  const cover = [[-220, -180], [193, -180], [196, 0], [202, 221], [227, 451], [249, 600], [240, 630], [205, 644], [-220, 726]];
+  const lab = (cls, x, y, t, rot) => `<text class="${cls}" x="${f(x)}" y="${f(y)}"${rot ? ` transform="rotate(${rot} ${f(x)} ${f(y)})"` : ''}>${t}</text>`;
+  const om = g2w(129, 18), jm = g2w(86, -52), md = g2w(A_DORI - 8, -196);
+  $('#mapArt').innerHTML =
+    `<rect class="m-land" x="${WORLD.x0 - 60}" y="${WORLD.y0 - 60}" width="${WORLD.x1 - WORLD.x0 + 120}" height="${WORLD.y1 - WORLD.y0 + 120}"/>` +
+    `<path class="m-road" d="${d}"/>` +
+    `<path class="m-ave" d="M${f(e0.x)} ${f(e0.y)}L${f(e1.x)} ${f(e1.y)}"/>` +
+    `<path class="m-ave" style="stroke-width:11" d="M${f(m0.x)} ${f(m0.y)}L${f(m1.x)} ${f(m1.y)}"/>` +
+    `<path class="m-land" d="${poly(cover)}"/>` +
+    `<path class="m-park" d="${poly(YOYOGI)}"/><path class="m-park" d="${poly(MEIJI)}"/>` +
+    `<ellipse class="m-water" cx="65" cy="436" rx="50" ry="26" transform="rotate(-8 65 436)"/>` +
+    `<ellipse class="m-ppath" cx="64" cy="436" rx="70" ry="42" transform="rotate(-8 64 436)"/>` +
+    `<path class="m-ppath" d="M192 292C150 300 122 332 106 396M118 197C118 250 96 300 104 396M84 477C112 520 122 580 98 650S40 694-60 702M160 322C200 380 216 460 200 540S150 604 108 566M-70 300C-30 330-20 380-4 420M-60 180C-20 120 60 100 80 20S60-120 100-180M186 100C120 96 60 60-20 40"/>` +
+    `<path class="m-lane" d="M-230 188.5H186L203 197L212 240L${f(e0.x)} ${f(e0.y)}"/>` +
+    `<path class="m-rail" d="${spline(RAIL)}"/><path class="m-raild" d="${spline(RAIL)}"/>` +
+    `<g transform="translate(211 238)"><rect class="m-st" x="-8.5" y="-8.5" width="17" height="17" rx="5"/><rect class="m-stg" x="-4.2" y="-5" width="8.4" height="7.2" rx="1.9"/><circle class="m-stg" cx="-2.2" cy="4.8" r="1.05"/><circle class="m-stg" cx="2.2" cy="4.8" r="1.05"/></g>` +
+    lab('m-stt', 224, 242, 'Harajuku') + lab('m-ptxt', 28, 150, 'Meiji Jingu') + lab('m-ptxt', 26, 522, 'Yoyogi Park') +
+    lab('m-txt', om.x, om.y, 'Omotesando', 14) + lab('m-cap', jm.x, jm.y, 'JINGUMAE', 14) + lab('m-txt', md.x, md.y, 'Meiji-dori', -76) +
+    lab('m-cap', 372, 760, 'SHIBUYA', 14) + lab('m-cap', 20, 800, 'UDAGAWACHO', 14);
+}
+
+/* ---------- drops ---------- */
+const HERO = {x: 140, y: 332};
+const START = g2w(A_MAIN, 270 - (A_MAIN - 6) - dist(g2w(6, 0), GATE) - dist(GATE, HERO));   // puts the big drop a 270 m walk away
+const me = {x: START.x, y: START.y, hd: 0};
+const mk = (id, t, x, y) => ({id, t, x, y, place: placeOf({x, y})});
+const drops = [
+  mk('h1', 'l', HERO.x, HERO.y), mk('m1', 'm', 39, 377), mk('m2', 'm', 332, 457),
+  mk('s1', 's', 146, 155), mk('s2', 's', 264, 219), mk('s3', 's', 346, 198), mk('s4', 's', 44, 293), mk('s5', 's', 165, 435),
+  mk('s6', 's', 263, 474), mk('s7', 's', 381, 408), mk('s8', 's', 150, 520), mk('s9', 's', 354, 531), mk('s10', 's', 262, 575),
+  mk('s11', 's', 118, 585), mk('s12', 's', 318, 690), mk('s13', 's', 150, 770), mk('s14', 's', 392, 800)
+];
+(() => { const r = rng(21); let n = 0, guard = 0; while (n < 18 && guard++ < 400){ const x = lerp(WORLD.x0 + 30, WORLD.x1 - 30, r()), y = lerp(WORLD.y0 + 30, WORLD.y1 - 30, r()); if (x > -70 && x < 490 && y > -70 && y < 960) continue; if (drops.some(d => dist(d, {x, y}) < 55)) continue; drops.push(mk('x' + n, n % 6 === 1 ? 'm' : 's', Math.round(x), Math.round(y))); n++; } })();
+drops.push(mk('h2', 'l', 566, 905), mk('h3', 'l', 590, -44));
+[['g1', 'l', 392, 292], ['g2', 'm', 96, 250], ['g3', 'm', 228, 652]].forEach(([id, t, x, y]) => { const d = mk(id, t, x, y); d.gold = true; drops.push(d); });
+const clusters = [{id: 'c1', cluster: true, n: 46, x: 361, y: 143}, {id: 'c2', cluster: true, n: 58, x: 46, y: 580}, {id: 'c3', cluster: true, n: 71, x: 372, y: 580}];
+clusters.forEach((c, ci) => { const r = rng(40 + ci); c.kids = []; for (let i = 0; i < 5; i++){ const ang = (i + r() * .6) * 1.2566, rad = 44 + r() * 34; c.kids.push(mk(c.id + 'k' + i, i === 2 ? 'm' : 's', Math.round(c.x + Math.cos(ang) * rad), Math.round(c.y + Math.sin(ang) * rad * .8))); } });
+let mine = [];
+function buildMine(){ mine = []; if (!S.mine) return; const r = rng(99), n = clamp(Math.round(S.mine.drops * .33), 3, 26); for (let i = 0; i < n; i++) mine.push({id: 'y' + i, mine: true, x: lerp(-150, 610, r()), y: lerp(-110, 1040, r())}); }
+const isFound = id => S.found.some(f => f.id === id);
+const tierLeft = t => TIERS[t].left - S.found.filter(f => f.t === t).length;
+const campLeft = () => tierLeft('s') + tierLeft('m') + tierLeft('l');
+
+/* ---------- walking routes ---------- */
+const snapA = a => A_MAIN + Math.round((a - A_MAIN) / A_STEP) * A_STEP;
+const snapB = b => Math.round(b / B_STEP) * B_STEP;
+function routeTo(to, from = me){
+  const pts = [{x: from.x, y: from.y}];
+  const push = p => { if (dist(p, pts[pts.length - 1]) > 1.5) pts.push({x: p.x, y: p.y}); };
+  const fp = inPark(from), tp = inPark(to);
+  if (fp && tp){ push(to); }
+  else if (!fp && tp){ const g = w2g(from), a = Math.max(snapA(g.a), A_MAIN - 2 * A_STEP); push(g2w(a, g.b)); push(g2w(a, 0)); push(g2w(6, 0)); push(GATE); push(to); }
+  else if (fp && !tp){ const g = w2g(to), a = Math.max(snapA(g.a), A_MAIN - 2 * A_STEP); push(GATE); push(g2w(6, 0)); push(g2w(a, 0)); push(g2w(a, g.b)); push(to); }
+  else { const f = w2g(from), t = w2g(to), a = snapA(f.a), b = snapB(t.b); push(g2w(a, f.b)); push(g2w(a, b)); push(g2w(t.a, b)); push(to); }
+  return pts;
+}
+const plen = pts => { let L = 0; for (let i = 1; i < pts.length; i++) L += dist(pts[i], pts[i - 1]); return L; };
+function pointAt(pts, d){ for (let i = 1; i < pts.length; i++){ const a = pts[i - 1], b = pts[i], l = dist(a, b); if (d <= l || i === pts.length - 1){ const t = l ? clamp(d / l, 0, 1) : 1; return {x: lerp(a.x, b.x, t), y: lerp(a.y, b.y, t), ang: Math.atan2(b.x - a.x, -(b.y - a.y))}; } d -= l; } return {x: pts[0].x, y: pts[0].y, ang: 0}; }
+function cut(pts, d0, d1){ const out = []; let acc = 0; for (let i = 1; i < pts.length; i++){ const a = pts[i - 1], b = pts[i], l = dist(a, b), s = acc, e = acc + l; if (l > 0 && e >= d0 && s <= d1){ const t0 = clamp((d0 - s) / l, 0, 1), t1 = clamp((d1 - s) / l, 0, 1); if (!out.length) out.push({x: lerp(a.x, b.x, t0), y: lerp(a.y, b.y, t0)}); out.push({x: lerp(a.x, b.x, t1), y: lerp(a.y, b.y, t1)}); } acc = e; } return out; }
+const pathD = pts => pts.length > 1 ? 'M' + pts.map(p => p.x.toFixed(1) + ' ' + p.y.toFixed(1)).join('L') : '';
+const wrapPi = a => ((a + Math.PI * 3) % (Math.PI * 2)) - Math.PI;
+
+/* ---------- 3D-looking coin, drawn on canvas ---------- */
+const css = getComputedStyle(document.documentElement), tok = n => css.getPropertyValue(n).trim();
+const COL = {a: tok('--coin-a') || '#cf47ea', b: tok('--coin-b') || '#6f9acd', c: tok('--coin-c') || '#19f5a3', f: tok('--coin-face') || '#232323', f2: tok('--coin-face-hi') || '#3b3b42', e1: tok('--coin-e1') || '#0b0b0c', e2: tok('--coin-e2') || '#3a3a40', e3: tok('--coin-e3') || '#151517'};
+function drawCoin(ctx, x, y, R, yaw, roll, alpha){
+  const c = Math.cos(yaw), s = Math.sin(yaw), ac = Math.max(Math.abs(c), .03), off = R * .13 * s;
+  const nx = c >= 0 ? off : -off, fx = -nx;                     // near and far face centres
+  ctx.save(); ctx.translate(x, y); if (roll) ctx.rotate(roll); ctx.globalAlpha = alpha == null ? 1 : alpha;
+  const eg = ctx.createLinearGradient(-R, 0, R, 0); eg.addColorStop(0, COL.e1); eg.addColorStop(.5, COL.e2); eg.addColorStop(1, COL.e3);
+  ctx.fillStyle = eg; ctx.beginPath(); ctx.ellipse(fx, 0, R * ac, R, 0, 0, Math.PI * 2); ctx.fill();
+  ctx.fillRect(Math.min(fx, nx), -R, Math.abs(nx - fx), R * 2);
+  if (Math.abs(nx - fx) > 1.5){                                // reeded edge
+    ctx.strokeStyle = 'rgba(255,255,255,.2)'; ctx.lineWidth = Math.max(.6, R * .014); ctx.beginPath();
+    const side = nx > 0 ? Math.PI : 0;
+    for (let i = -11; i <= 11; i++){ const ph = side + i * .125, xr = R * ac * Math.cos(ph), yr = R * Math.sin(ph); ctx.moveTo(fx + xr, yr); ctx.lineTo(nx + xr, yr); }
+    ctx.stroke();
+  }
+  ctx.translate(nx, 0); ctx.scale(ac, 1);
+  const fg = ctx.createRadialGradient(-R * .3, -R * .4, 0, 0, 0, R * 1.1); fg.addColorStop(0, COL.f2); fg.addColorStop(1, COL.f);
+  ctx.fillStyle = fg; ctx.beginPath(); ctx.arc(0, 0, R, 0, Math.PI * 2); ctx.fill();
+  ctx.strokeStyle = 'rgba(255,255,255,.14)'; ctx.lineWidth = R * .04; ctx.beginPath(); ctx.arc(0, 0, R * .93, 0, Math.PI * 2); ctx.stroke();
+  const bg = ctx.createLinearGradient(-R * .575, R * .47, R * .575, -R * .48); bg.addColorStop(0, COL.a); bg.addColorStop(.5, COL.b); bg.addColorStop(1, COL.c);
+  ctx.fillStyle = bg; ctx.strokeStyle = bg; ctx.lineWidth = R * .05; ctx.lineJoin = 'round'; ctx.beginPath();
+  for (const cy of [-.357, 0, .357]){                          // the three slanted bars; the middle one leans the other way
+    const k = .19 * R * (cy === 0 ? -1 : 1), x0 = -.55 * R, x1 = .55 * R, y0 = (cy - .093) * R, y1 = (cy + .093) * R;
+    ctx.moveTo(x0 + Math.max(k, 0), y0); ctx.lineTo(x1 + Math.min(k, 0), y0); ctx.lineTo(x1 - Math.max(k, 0), y1); ctx.lineTo(x0 - Math.min(k, 0), y1); ctx.closePath();
+  }
+  ctx.fill(); ctx.stroke();
+  const hl = Math.max(0, Math.cos(yaw - .5)), sg = ctx.createRadialGradient(-R * .36, -R * .46, 0, -R * .36, -R * .46, R * 1.15);
+  sg.addColorStop(0, `rgba(255,255,255,${(.26 * hl).toFixed(3)})`); sg.addColorStop(1, 'rgba(255,255,255,0)');
+  ctx.fillStyle = sg; ctx.beginPath(); ctx.arc(0, 0, R, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = `rgba(0,0,0,${(.45 * (1 - ac)).toFixed(3)})`; ctx.beginPath(); ctx.arc(0, 0, R, 0, Math.PI * 2); ctx.fill();
+  ctx.restore();
+}
+function sizeCanvas(c, w, h){ const dpr = Math.min(2.5, window.devicePixelRatio || 1); c.width = Math.round(w * dpr); c.height = Math.round(h * dpr); const x = c.getContext('2d'); x.setTransform(dpr, 0, 0, dpr, 0, 0); return x; }
+
+/* ---------- screens ---------- */
+const phone = $('#phone');
+const screens = {home: $('#home'), map: $('#map'), hunt: $('#hunt'), ar: $('#ar')};
+let cur = 'home';
+function go(name){
+  if (name === cur) return;
+  const prev = screens[cur], next = screens[name], was = cur;
+  next.hidden = false; void next.offsetWidth; next.classList.add('on'); prev.classList.remove('on');
+  cur = name;
+  setTimeout(() => { if (cur !== was) prev.hidden = true; }, 800);
+  if (name === 'map') showMap();
+  if (name === 'home') renderHome();
+}
+const toastEl = $('#toast'); let toastT = 0;
+function toast(msg){ toastEl.textContent = msg; toastEl.classList.add('on'); clearTimeout(toastT); toastT = setTimeout(() => toastEl.classList.remove('on'), 2800); }
+const buzz = p => { try { navigator.vibrate && navigator.vibrate(p); } catch (e) {} };
+
+/* ---------- map view ---------- */
+const mapScr = $('#map'), mapEl = $('#mapWrap'), mapSvg = $('#mapSvg'), pinsEl = $('#pins'), routeEl = $('#route'), pinSheet = $('#pinSheet');
+const cam = {x: 208, y: 420, z: .9}; let MW = 0, MH = 0, camReady = false, flyStop = null, pinList = [], meEl = null, sel = null, route = null, routeStop = null;
+function measure(){ MW = mapEl.clientWidth; MH = mapEl.clientHeight; }
+function clampCam(){ const zMin = Math.max(MW / (WORLD.x1 - WORLD.x0), MH / (WORLD.y1 - WORLD.y0)); cam.z = clamp(cam.z, zMin, 2.8); const hw = MW / 2 / cam.z, hh = MH / 2 / cam.z; cam.x = clamp(cam.x, WORLD.x0 + hw, WORLD.x1 - hw); cam.y = clamp(cam.y, WORLD.y0 + hh, WORLD.y1 - hh); }
+const toScreen = p => ({x: (p.x - cam.x) * cam.z + MW / 2, y: (p.y - cam.y) * cam.z + MH / 2});
+function applyCam(){
+  if (!MW || !MH) return; clampCam();
+  const w = MW / cam.z, h = MH / cam.z;
+  mapSvg.setAttribute('viewBox', `${(cam.x - w / 2).toFixed(2)} ${(cam.y - h / 2).toFixed(2)} ${w.toFixed(2)} ${h.toFixed(2)}`);
+  routeEl.style.strokeWidth = (4.6 / cam.z).toFixed(2); routeEl.style.strokeDasharray = `0.01 ${(9.5 / cam.z).toFixed(2)}`;
+  for (const d of pinList){ const s = toScreen(d); d.el.style.transform = `translate(${s.x.toFixed(1)}px,${s.y.toFixed(1)}px) translate(-50%,-50%)`; }
+  if (meEl){ const s = toScreen(me); meEl.style.transform = `translate(${s.x.toFixed(1)}px,${s.y.toFixed(1)}px)`; meEl.style.setProperty('--hd', (me.hd * 180 / Math.PI).toFixed(1) + 'deg'); }
+}
+function homeCam(){ const z = MW / 430; return {x: 208, y: -24 + MH / 2 / z, z}; }
+function fly(to, ms){ flyStop && flyStop(); const from = {x: cam.x, y: cam.y, z: cam.z}; flyStop = tween(reduced ? 1 : (ms || 650), t => { const e = ioCubic(t); cam.x = lerp(from.x, to.x, e); cam.y = lerp(from.y, to.y, e); cam.z = lerp(from.z, to.z == null ? from.z : to.z, e); applyCam(); }, () => { flyStop = null; }); }
+function showMap(){ measure(); if (!camReady && MW){ Object.assign(cam, homeCam()); camReady = true; } renderPins(); applyCam(); }
+function renderPins(popMine){
+  pinsEl.textContent = ''; pinList = [];
+  const add = (d, pop) => { const b = document.createElement('button'); b.type = 'button';
+    if (d.cluster){ b.className = 'pin pin--c'; b.innerHTML = `<svg class="coinf" width="24" height="24"><use href="#coinf"/></svg><span>+${d.n}</span>`; b.setAttribute('aria-label', `${d.n} more drops here`); }
+    else if (d.mine){ b.className = 'pin pin--mine'; b.innerHTML = '<i></i>'; b.setAttribute('aria-label', 'One of your drops'); }
+    else { const v = TIERS[d.t].v, lock = d.gold && !canGold(); b.className = 'pin pin--' + d.t + (d.gold ? ' pin--gold' : '') + (lock ? ' locked' : ''); b.innerHTML = `<span class="pin-c"><svg><use href="#coinf"/></svg></span>${d.gold ? '<span class="pin-k"><svg class="ico"><use href="#i-lock"/></svg></span>' : ''}<span class="pin-l">${sol(v)} SOL</span>`; b.setAttribute('aria-label', `${sol(v)} SOL drop, ${d.place}${d.gold ? ', holders only' : ''}`); }
+    if (pop && !reduced){ b.classList.add('pop'); b.style.animationDelay = (Math.random() * .5).toFixed(2) + 's'; }
+    b.addEventListener('click', e => { e.stopPropagation(); onPin(d); });
+    b.addEventListener('focus', () => { const p = toScreen(d); if (p.x < 30 || p.y < 90 || p.x > MW - 30 || p.y > MH - 60) fly({x: d.x, y: d.y}, 350); });
+    d.el = b; pinsEl.appendChild(b); pinList.push(d); };
+  mine.forEach(d => add(d, popMine));
+  clusters.forEach(c => { if (c.open) c.kids.forEach(k => { if (!isFound(k.id)) add(k, c.fresh); }); if (c.n > 0) add(c); c.fresh = false; });
+  drops.forEach(d => { if (!isFound(d.id)) add(d); });
+  meEl = document.createElement('span'); meEl.className = 'medot'; meEl.innerHTML = '<i class="cone"></i><i class="dot"></i>'; pinsEl.appendChild(meEl);
+  $('#campLine').textContent = `100 SOL · ${int(campLeft())} of 1,000 left`;
+  applyCam();
+}
+function onPin(d){
+  if (d.mine){ toast(`Yours. Goes live ${S.mine.when} at 10:00.`); return; }
+  if (d.cluster){ deselect(); if (!d.open){ d.open = true; d.fresh = true; d.n -= d.kids.length; renderPins(); } fly({x: d.x, y: d.y, z: Math.max(cam.z, 1.7)}, 600); return; }
+  select(d);
+}
+function select(d){
+  if (sel === d) return; deselect();
+  sel = d; d.el.classList.add('sel'); route = routeTo(d); const L = plen(route), v = TIERS[d.t].v;
+  const lock = d.gold && !canGold(), need = `${tk(TOKEN.levels[1])} ${T}`;
+  $('#psTitle').innerHTML = `${sol(v)} SOL drop${d.gold ? '<span class="gold-chip">Holders only</span>' : ''}`;
+  $('#psSub').textContent = `${d.place} · ${Math.round(L)} m · ${Math.max(1, Math.round(L / 75))} min walk`;
+  $('#psLeft').innerHTML = d.gold ? (lock ? `<b>Holders only.</b> Needs ${need}` : `<b>Holder-only drop.</b> You're in`) : `<b>${int(tierLeft(d.t))} of ${int(TIERS[d.t].of)}</b> ${TIERS[d.t].name} drops still hidden`;
+  $('#psReach').innerHTML = `Exact spot shows up <b>${reach()} m</b> away`;
+  $('#startHunt').setAttribute('aria-disabled', String(lock)); $('#startLbl').textContent = lock ? `Needs ${need}` : 'Start the hunt'; $('#startIco').setAttribute('href', lock ? '#i-lock' : '#i-compass');
+  pinSheet.classList.add('on'); pinSheet.inert = false; mapScr.style.setProperty('--sh', pinSheet.offsetHeight + 'px'); mapScr.classList.add('has-sheet');
+  routeStop && routeStop(); routeStop = tween(reduced ? 1 : 700, t => routeEl.setAttribute('d', pathD(cut(route, 0, L * outCubic(t)))), () => { routeStop = null; });
+  // frame the whole walk above the sheet
+  let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity; route.forEach(p => { x0 = Math.min(x0, p.x); y0 = Math.min(y0, p.y); x1 = Math.max(x1, p.x); y1 = Math.max(y1, p.y); });
+  const top = 104, bot = pinSheet.offsetHeight + 40, availH = Math.max(120, MH - top - bot);
+  const z = clamp(Math.min((MW - 120) / Math.max(40, x1 - x0), availH / Math.max(40, y1 - y0)), .7, 1.7);
+  fly({x: (x0 + x1) / 2, y: (y0 + y1) / 2 - ((top + availH / 2) - MH / 2) / z, z}, 700);
+}
+function deselect(){ if (!sel) return; sel.el && sel.el.classList.remove('sel'); sel = null; route = null; routeStop && routeStop(); routeStop = null; routeEl.setAttribute('d', ''); pinSheet.classList.remove('on'); pinSheet.inert = true; mapScr.classList.remove('has-sheet'); }
+
+// pan, pinch and wheel
+const ptrs = new Map(); let moved = 0, pinchD = 0;
+function zoomAt(sx, sy, k){ const wx = cam.x + (sx - MW / 2) / cam.z, wy = cam.y + (sy - MH / 2) / cam.z; cam.z = cam.z * k; clampCam(); cam.x = wx - (sx - MW / 2) / cam.z; cam.y = wy - (sy - MH / 2) / cam.z; applyCam(); }
+mapEl.addEventListener('pointerdown', e => { if (e.target.closest('.pin')) return; flyStop && flyStop(); flyStop = null; try { mapEl.setPointerCapture(e.pointerId); } catch (_) {} ptrs.set(e.pointerId, {x: e.clientX, y: e.clientY}); if (ptrs.size === 1) moved = 0; pinchD = 0; mapEl.classList.add('drag'); });
+mapEl.addEventListener('pointermove', e => {
+  const p = ptrs.get(e.pointerId); if (!p) return;
+  const dx = e.clientX - p.x, dy = e.clientY - p.y; p.x = e.clientX; p.y = e.clientY; moved += Math.abs(dx) + Math.abs(dy);
+  if (ptrs.size === 1){ cam.x -= dx / cam.z; cam.y -= dy / cam.z; applyCam(); }
+  else if (ptrs.size === 2){ const [a, b] = [...ptrs.values()], dd = Math.hypot(a.x - b.x, a.y - b.y), r = mapEl.getBoundingClientRect(); cam.x -= dx / 2 / cam.z; cam.y -= dy / 2 / cam.z; if (pinchD) zoomAt((a.x + b.x) / 2 - r.left, (a.y + b.y) / 2 - r.top, dd / pinchD); else applyCam(); pinchD = dd; }
+});
+const ptrEnd = e => { if (!ptrs.has(e.pointerId)) return; ptrs.delete(e.pointerId); pinchD = 0; if (!ptrs.size){ mapEl.classList.remove('drag'); if (moved < 6 && e.type === 'pointerup') deselect(); } };
+mapEl.addEventListener('pointerup', ptrEnd); mapEl.addEventListener('pointercancel', ptrEnd);
+mapEl.addEventListener('wheel', e => { e.preventDefault(); const r = mapEl.getBoundingClientRect(); zoomAt(e.clientX - r.left, e.clientY - r.top, Math.exp(-e.deltaY * .0016)); }, {passive: false});
+[pinsEl, mapEl, mapScr, phone].forEach(el => el.addEventListener('scroll', () => { if (el.scrollLeft || el.scrollTop){ el.scrollLeft = 0; el.scrollTop = 0; } }));
+if ('ResizeObserver' in window) new ResizeObserver(() => { if (cur === 'map'){ measure(); applyCam(); } }).observe(mapEl);
+
+/* ---------- hunt ---------- */
+const bezel = $('#bezel'), orbit = $('#orbit'), orb = $('#orb'), miniEl = $('#mini'), miniSvg = $('#miniSvg'), miniRoute = $('#miniRoute'), miniMe = $('#miniMe');
+(() => { let h = ''; for (let i = 0; i < 72; i++){ const big = i % 6 === 0; h += `<line class="${big ? 'tk tk-b' : 'tk'}" x1="0" y1="-118" x2="0" y2="${big ? -105 : -111}" transform="rotate(${i * 5})"/>`; } bezel.innerHTML = h + '<text class="tk-n" x="0" y="-88" text-anchor="middle">N</text>'; })();
+let hunt = null; const MINI_Z = 1.7;
+function startHunt(d){
+  const pts = route || routeTo(d), total = plen(pts);
+  deselect();
+  hunt = {drop: d, pts, total, walked: 0, t: 0, speed: total / clamp(total / 34, 4.5, 10), stop: null, hint: '', warm: '', reach: reach()};
+  me.hd = pointAt(pts, 0).ang;
+  $('#huntTitle').textContent = `Hunting ${sol(TIERS[d.t].v)} SOL`; $('#huntPlace').textContent = d.place; $('#inCircle').hidden = true;
+  go('hunt');
+  const w = miniEl.clientWidth / MINI_Z, h = miniEl.clientHeight / MINI_Z;
+  hunt.mw = miniEl.clientWidth; hunt.mh = miniEl.clientHeight;
+  miniSvg.setAttribute('viewBox', `${(d.x - w / 2).toFixed(1)} ${(d.y - h / 2).toFixed(1)} ${w.toFixed(1)} ${h.toFixed(1)}`);
+  $('#zone').setAttribute('cx', d.x); $('#zone').setAttribute('cy', d.y); $('#zone').setAttribute('r', hunt.reach); $('#noteReach').textContent = hunt.reach;
+  miniRoute.style.strokeWidth = (4 / MINI_Z).toFixed(2); miniRoute.style.strokeDasharray = `0.01 ${(8.5 / MINI_Z).toFixed(2)}`;
+  $('#miniCoin').style.transform = `translate(${(hunt.mw / 2).toFixed(1)}px,${(hunt.mh / 2).toFixed(1)}px)`;
+  drawHunt(total, wrapPi(Math.atan2(d.x - me.x, -(d.y - me.y)) - me.hd));
+  if (total <= hunt.reach){ const dd = d; setTimeout(() => { endHunt(); openAR(dd); }, 500); return; }
+  hunt.stop = addTicker(dt => {
+    const h = hunt; if (!h) return; h.t += dt;
+    h.walked = Math.min(h.total, h.walked + h.speed * Math.min(1, h.t / .8 + .1) * dt);
+    const p = pointAt(h.pts, h.walked); me.x = p.x; me.y = p.y; me.hd += wrapPi(p.ang - me.hd) * Math.min(1, dt * 5.5);
+    const rem = h.total - h.walked;
+    drawHunt(rem, wrapPi(Math.atan2(h.drop.x - me.x, -(h.drop.y - me.y)) - me.hd));
+    if (rem <= h.reach){ const dd = h.drop; endHunt(); buzz([18, 60, 18]); openAR(dd); }
+  });
+}
+function drawHunt(rem, rel){
+  const h = hunt, deg = rel * 180 / Math.PI, a = Math.abs(deg), side = deg < 0 ? 'left' : 'right';
+  $('#distN').textContent = Math.max(0, Math.round(rem));
+  bezel.style.transform = `rotate(${(-me.hd * 180 / Math.PI).toFixed(1)}deg)`;
+  orbit.style.transform = `rotate(${deg.toFixed(1)}deg)`; orb.firstElementChild.style.transform = `rotate(${(-deg).toFixed(1)}deg)`;
+  const hint = a < 14 ? 'Straight ahead' : a < 55 ? `A little to your ${side}` : a < 135 ? `On your ${side}` : 'Behind you';
+  const warm = rem > 160 ? 'Getting warmer' : rem > 85 ? 'Warmer' : rem > 48 ? 'Hot' : 'Very hot';
+  if (hint !== h.hint){ h.hint = hint; $('#hint').textContent = hint; }
+  if (warm !== h.warm){ h.warm = warm; $('#warm').textContent = warm; if (h.t > 0) buzz(12); }
+  const sx = (me.x - h.drop.x) * MINI_Z + h.mw / 2, sy = (me.y - h.drop.y) * MINI_Z + h.mh / 2;
+  miniMe.style.transform = `translate(${sx.toFixed(1)}px,${sy.toFixed(1)}px)`; miniMe.style.setProperty('--hd', (me.hd * 180 / Math.PI).toFixed(1) + 'deg');
+  miniRoute.setAttribute('d', pathD(cut(h.pts, h.walked, h.total)));
+  if (rem <= h.reach + 32 && $('#inCircle').hidden) $('#inCircle').hidden = false;
+}
+function endHunt(){ if (hunt && hunt.stop) hunt.stop(); hunt = null; }
+
+/* ---------- camera + claim ---------- */
+const arScr = $('#ar'), arC = $('#arCoin'), holdBtn = $('#holdBtn'), holdBar = $('#holdBar'), foundEl = $('#found');
+const HOLD_C = 2 * Math.PI * 38; let ar = null, holdP = 0, holdStop = null, holdBack = null, actx = null;
+const setHold = p => { holdBar.style.strokeDashoffset = (HOLD_C * (1 - p)).toFixed(1); };
+function openAR(d){
+  ar = {drop: d, phase: 'in', t: 0, yaw: 0, stop: null, claimed: false};
+  arScr.classList.remove('claimed'); foundEl.classList.remove('on'); foundEl.inert = true; holdP = 0; setHold(0);
+  $('#arTitle').textContent = `${sol(TIERS[d.t].v)} SOL drop`; $('#arSub').textContent = d.gold ? `Holder-only drop · ${d.place}` : `Paid by ${T} fees · ${d.place}`; $('#holdLbl').textContent = 'Hold to claim';
+  go('ar');
+  actx = sizeCanvas(arC, 230, 230); arC.style.opacity = 1;
+  ar.stop = addTicker(dt => {
+    const a = ar; if (!a) return; a.t += dt; let y = 0, sc = 1, al = 1, yaw = 0;
+    if (a.phase === 'in'){ const k = Math.min(1, a.t / (reduced ? .01 : 1.15)), e = outCubic(k); y = -360 * (1 - e) - Math.sin(k * Math.PI) * 14; yaw = (1 - e) * Math.PI * 5; if (k >= 1){ a.phase = 'idle'; a.t = 0; } }
+    else if (a.phase === 'idle'){ const cyc = a.t % 5.2; y = Math.sin(a.t * 1.7) * 7; yaw = reduced ? .35 : Math.sin(a.t * .85) * .5 + (cyc > 4.2 ? ioCubic((cyc - 4.2) / 1) * Math.PI * 2 : 0); }
+    else { const k = Math.min(1, a.t / .75); y = a.y0 - 64 * Math.sin(k * Math.PI) + 190 * k * k; sc = 1 + .14 * Math.sin(k * Math.PI) - .78 * k * k; al = k < .7 ? 1 : 1 - (k - .7) / .3; yaw = a.yaw0 + k * (2 - k) * 9; if (k >= 1){ actx.clearRect(0, 0, 230, 230); arC.style.opacity = 0; a.stop(); return; } }
+    a.y = y; a.yaw = yaw;
+    arC.style.transform = `translateY(${y.toFixed(1)}px) scale(${sc.toFixed(3)})`;
+    actx.clearRect(0, 0, 230, 230); drawCoin(actx, 115, 115, 84, yaw, 0, al);
+  });
+}
+function closeAR(){ if (ar && ar.stop) ar.stop(); ar = null; holdStop && holdStop(); holdStop = null; holdBtn.classList.remove('down'); }
+function holdStart(e){
+  if (!ar || ar.claimed || holdStop) return; if (e && e.cancelable) e.preventDefault();
+  holdBack && holdBack(); holdBack = null; holdBtn.classList.add('down'); buzz(10);
+  holdStop = addTicker(dt => { holdP = Math.min(1, holdP + dt / 1.15); setHold(holdP); if (holdP >= 1){ holdStop(); holdStop = null; holdBtn.classList.remove('down'); claim(); } });
+}
+function holdEnd(){ if (!holdStop) return; holdStop(); holdStop = null; holdBtn.classList.remove('down'); const from = holdP; if (from < 1) $('#holdLbl').textContent = 'Keep holding'; holdBack = tween(240, t => { holdP = from * (1 - t); setHold(holdP); }, () => { holdBack = null; }); }
+holdBtn.addEventListener('pointerdown', e => { try { holdBtn.setPointerCapture(e.pointerId); } catch (_) {} holdStart(e); });
+['pointerup', 'pointercancel', 'lostpointercapture'].forEach(t => holdBtn.addEventListener(t, holdEnd));
+holdBtn.addEventListener('keydown', e => { if ((e.key === ' ' || e.key === 'Enter') && !e.repeat) holdStart(e); });
+holdBtn.addEventListener('keyup', e => { if (e.key === ' ' || e.key === 'Enter') holdEnd(); });
+holdBtn.addEventListener('contextmenu', e => e.preventDefault());
+function claim(){
+  const a = ar; if (!a || a.claimed) return; a.claimed = true; const d = a.drop, v = TIERS[d.t].v;
+  buzz([25, 50, 40]);
+  S.bal += v; S.found.unshift({id: d.id, t: d.t, place: d.place, at: Date.now()}); save();
+  me.x = d.x; me.y = d.y;
+  $('#fTitle').textContent = `You found ${sol(v)} SOL`; $('#fFrom').textContent = `${sol(v)} SOL from ${T} fees`; $('#fPlace').textContent = d.place; $('#fLeft').textContent = `${int(campLeft())} drops`;
+  a.phase = 'out'; a.t = 0; a.y0 = a.y || 0; a.yaw0 = a.yaw || 0; arScr.classList.add('claimed');
+  setTimeout(() => { foundEl.classList.add('on'); foundEl.inert = false; }, reduced ? 0 : 430);
+}
+
+/* ---------- coin burst ---------- */
+const fx = $('#fx'); let parts = [], fxStop = null, fctx = null;
+function burst(x, y, n){
+  const w = phone.clientWidth, h = phone.clientHeight; fctx = sizeCanvas(fx, w, h);
+  for (let i = 0; i < (n || 34); i++) parts.push({x, y, vx: (Math.random() - .5) * 780, vy: -(430 + Math.random() * 760), R: 11 + Math.random() * 17, yaw: Math.random() * 6.28, vyaw: (Math.random() < .5 ? -1 : 1) * (5 + Math.random() * 9), roll: (Math.random() - .5) * 1.2, vroll: (Math.random() - .5) * 3, life: 0, max: 1.3 + Math.random() * .6});
+  if (!fxStop) fxStop = addTicker(dt => { fctx.clearRect(0, 0, w, h); parts = parts.filter(p => { p.life += dt; if (p.life > p.max) return false; p.vy += 1750 * dt; p.x += p.vx * dt; p.y += p.vy * dt; p.yaw += p.vyaw * dt; p.roll += p.vroll * dt; drawCoin(fctx, p.x, p.y, p.R, p.yaw, p.roll, Math.min(1, (p.max - p.life) / .3)); return true; }); if (!parts.length){ fxStop(); fxStop = null; fctx.clearRect(0, 0, w, h); } });
+}
+
+/* ---------- hide money ---------- */
+const hideEl = $('#hide'), scrim = $('#scrim'), approve = $('#approve'); let amt = 10000, amtStop = null, busy = false, gen = 0;
+function nextSat(){ const d = new Date(); d.setDate(d.getDate() + (((6 - d.getDay()) + 7) % 7 || 7)); return d.toLocaleDateString('en-US', {weekday: 'short', month: 'short', day: 'numeric'}); }
+function setAmt(v){
+  amt = v; const p = PLANS[v];
+  $$('#amtSeg button').forEach(b => b.setAttribute('aria-pressed', String(+b.dataset.amt === v)));
+  amtStop && amtStop(); amtStop = tween(reduced ? 1 : 650, t => { $('#amtN').textContent = nf.format(Math.round(v / 100 * outCubic(t))); }, () => { amtStop = null; });
+  $('#amtSub').textContent = `hidden in ${int(p.drops)} drops`;
+  $('#tiers').innerHTML = p.tiers.map(([n, tv]) => `<div class="row"><span><svg class="coin" width="${tv === 5 ? 22 : tv === 50 ? 27 : 32}"><use href="#coin"/></svg>${int(n)} ${n === 1 ? 'drop' : 'drops'} of ${sol(tv)} SOL</span><b>${sol(n * tv)} SOL</b></div>`).join('');
+  p.areas.forEach((n, i) => { $('#ar' + i).textContent = `${int(n)} drops`; });
+  const r = rng(v), zc = [[50, 20], [45, 51], [63, 81]]; let z = '';
+  zc.forEach(([cx, cy], i) => { z += `<circle class="t-z" cx="${cx}" cy="${cy}" r="13"/>`; for (let k = 0; k < Math.min(11, p.areas[i]); k++){ const an = r() * 6.283, rd = Math.sqrt(r()) * 10.5; z += `<circle class="t-d" cx="${(cx + Math.cos(an) * rd).toFixed(1)}" cy="${(cy + Math.sin(an) * rd).toFixed(1)}" r="1.25"/>`; } });
+  $('#zones').innerHTML = z;
+  $('#whenTxt').textContent = `${nextSat()} · 10:00–18:00`;
+  $('#hideLbl').textContent = `Hide ${sol(v)} SOL`;
+}
+function openHide(){
+  const ok = [100, 1000, 10000].filter(v => v <= S.bal);
+  if (!ok.length){ toast('Not enough SOL to hide. Find a drop first.'); return; }
+  $$('#amtSeg button').forEach(b => { b.disabled = +b.dataset.amt > S.bal; });
+  setAmt(ok[ok.length - 1]); $('#hideBody').scrollTop = 0;
+  scrim.hidden = false; void scrim.offsetWidth; scrim.classList.add('on'); hideEl.classList.add('on'); hideEl.inert = false;
+}
+function closeHide(){ hideEl.classList.remove('on'); hideEl.inert = true; scrim.classList.remove('on'); setTimeout(() => { if (!hideEl.classList.contains('on')) scrim.hidden = true; }, 400); }
+function confirmHide(){
+  if (busy) return; busy = true; const g = gen; approve.classList.remove('ok'); $('#apLbl').textContent = 'Approve in wallet'; approve.classList.add('on');
+  setTimeout(() => { approve.classList.add('ok'); $('#apLbl').textContent = 'Approved'; buzz(20); }, reduced ? 200 : 950);
+  setTimeout(() => {
+    approve.classList.remove('on'); busy = false; if (g !== gen) return;
+    const p = PLANS[amt], prev = S.mine || {amt: 0, drops: 0}, b = $('#hideBtn').getBoundingClientRect(), ph = phone.getBoundingClientRect();
+    S.bal -= amt; S.mine = {amt: prev.amt + amt, drops: prev.drops + p.drops, when: nextSat()}; save();
+    if (!reduced) burst(b.left - ph.left + b.width / 2, b.top - ph.top + b.height / 2);
+    buildMine(); closeHide(); renderHome(); if (cur === 'map'){ deselect(); renderPins(true); applyCam(); }
+    setTimeout(() => toast(`${int(p.drops)} drops hidden. They go live ${S.mine.when} at 10:00.`), 650);
+  }, reduced ? 500 : 1550);
+}
+
+/* ---------- home ---------- */
+function ago(t){ const m = Math.floor((Date.now() - t) / 60000); return m < 1 ? 'Just now' : m < 60 ? `${m} min ago` : m < 1440 ? `${Math.floor(m / 60)} h ago` : new Date(t).toLocaleDateString('en-US', {month: 'short', day: 'numeric'}); }
+function nearest(){ const hero = drops[0]; if (!isFound(hero.id)) return {d: hero, L: plen(routeTo(hero))}; let best = null; drops.forEach(d => { if (isFound(d.id) || (d.gold && !canGold())) return; const L = plen(routeTo(d)); if (!best || L < best.L) best = {d, L}; }); return best; }
+function renderHome(){
+  $('#balInt').textContent = int(Math.floor(S.bal / 100)); $('#balDec').textContent = '.' + String(S.bal % 100).padStart(2, '0');
+  const n = nearest(); $('#alertBtn').hidden = !n;
+  if (n){ $('#alertTitle').textContent = `A ${sol(TIERS[n.d.t].v)} SOL drop is ${Math.round(n.L)} m away`; $('#alertSub').textContent = `${n.d.place} · ${T} fees`; }
+  const left = campLeft(); $('#campLine2').textContent = `100 SOL · ${int(left)} of 1,000 left`; $('#campBar').style.width = ((1000 - left) / 10).toFixed(1) + '%';
+  renderPerks(); renderFees();
+  $('#mineWrap').hidden = !S.mine;
+  if (S.mine){ $('#mineLine').textContent = `${sol(S.mine.amt)} SOL · ${int(S.mine.drops)} drops waiting`; $('#mineWhen').textContent = `Goes live ${S.mine.when} at 10:00. Anything not found by 18:00 comes back to you.`; }
+  const total = S.found.reduce((s, f) => s + TIERS[f.t].v, 0); $('#foundSum').textContent = S.found.length ? `${sol(total)} SOL` : '';
+  $('#foundList').innerHTML = S.found.length ? S.found.map(f => `<div class="frow"><svg class="coin" width="34"><use href="#coin"/></svg><span class="frow-t"><b>${sol(TIERS[f.t].v)} SOL</b><small>${f.place} · from ${T} fees</small></span><time>${ago(f.at)}</time></div>`).join('') : `<div class="empty">Nothing yet. ${n ? `The closest drop is ${Math.round(n.L)} m away.` : ''}</div>`;
+}
+function renderPerks(){
+  const t = tier(), h = S.hold || 0, chip = $('#tierChip');
+  $('#holdAmt').textContent = int(h); chip.textContent = t ? `Tier ${t}` : 'Not holding'; chip.classList.toggle('on', t > 0);
+  $$('#holdSeg button').forEach(b => b.setAttribute('aria-pressed', String(+b.dataset.hold === h)));
+  $$('.perk').forEach(p => { const need = +p.dataset.need, on = t >= need; p.classList.toggle('on', on); $('.pk-n', p).textContent = on ? 'Unlocked' : tk(TOKEN.levels[need - 1]) + '+'; });
+}
+const f2 = c => (c / 100).toFixed(2);
+function nextBatch(){ const n = new Date(); n.setMinutes(0, 0, 0); n.setHours(Math.floor(n.getHours() / 6) * 6 + 6); return n; }   // a batch every six hours
+function renderFees(){
+  const early = tier() >= 1, s = Math.max(0, Math.floor((nextBatch() - Date.now()) / 1000) - (early ? 900 : 0));
+  $('#feeIn').textContent = f2(FEES.in); $('#feeOut').textContent = f2(FEES.out);
+  $('#feeClaimed').textContent = f2(FEES.claimed + S.found.reduce((a, f) => a + TIERS[f.t].v, 0));
+  $('#nextAmt').textContent = f2(FEES.in - FEES.out);
+  $('#nextIn').textContent = [Math.floor(s / 3600), Math.floor(s % 3600 / 60), s % 60].map(n => String(n).padStart(2, '0')).join(':');
+  $('#nextLbl').textContent = early ? 'Live for you in' : 'Goes live in'; $('#nextIn').parentNode.classList.toggle('early', early);
+}
+function setHolding(v){
+  S.hold = v; save(); renderHome(); const t = tier();
+  toast(t === 0 ? 'Not holding. Perks are locked.' : t === 1 ? 'Tier 1. You see every batch 15 min early.' : t === 2 ? 'Tier 2. Gold drops on the map are yours to claim.' : 'Tier 3. You can claim from 50 m away.');
+}
+function reset(){
+  gen++; endHunt(); closeAR(); closeHide(); approve.classList.remove('on'); S = fresh(); save(); me.x = START.x; me.y = START.y; me.hd = 0;
+  clusters.forEach((c, i) => { if (c.open){ c.n += c.kids.length; c.open = false; } }); mine = []; camReady = false; sel = null; route = null;
+  routeEl.setAttribute('d', ''); pinSheet.classList.remove('on'); pinSheet.inert = true; mapScr.classList.remove('has-sheet');
+  if (cur === 'home') renderHome(); else go('home'); toast('Demo restarted');
+}
+
+/* ---------- wiring ---------- */
+$('#alertBtn').addEventListener('click', () => { go('map'); const n = nearest(); if (n && n.d.el) setTimeout(() => { if (cur === 'map' && !sel) select(n.d); }, reduced ? 0 : 650); });
+$('#goHunt').addEventListener('click', () => go('map'));
+$('#campCard').addEventListener('click', () => go('map'));
+$('#goHide').addEventListener('click', openHide);
+$('#mapPlus').addEventListener('click', openHide);
+$('#mapBack').addEventListener('click', () => { deselect(); go('home'); });
+$('#recenter').addEventListener('click', () => fly({x: me.x, y: me.y, z: Math.max(cam.z, 1.05)}, 550));
+$('#startHunt').addEventListener('click', () => { if (!sel) return; if (sel.gold && !canGold()){ toast(`Hold ${tk(TOKEN.levels[1])} ${T} to hunt this one. Pick a level under Holder perks on the home screen.`); return; } startHunt(sel); });
+$('#huntClose').addEventListener('click', () => { endHunt(); go('map'); fly({x: me.x, y: me.y, z: 1.1}, 500); });
+$('#arClose').addEventListener('click', () => { closeAR(); go('map'); fly({x: me.x, y: me.y, z: 1.1}, 500); });
+$('#keepBtn').addEventListener('click', () => { closeAR(); go('map'); fly({x: me.x, y: me.y, z: 1.05}, 600); });
+$('#shareBtn').addEventListener('click', () => { const f = S.found[0], txt = f ? `I just found ${sol(TIERS[f.t].v)} SOL hidden in ${f.place} on SolanaGO.` : 'SolanaGO'; const done = () => toast('Copied. Paste it anywhere.'), fail = () => toast(txt); try { navigator.clipboard.writeText(txt).then(done, fail); } catch (e) { fail(); } });
+$('#hideClose').addEventListener('click', closeHide); scrim.addEventListener('click', closeHide);
+$$('#amtSeg button').forEach(b => b.addEventListener('click', () => setAmt(+b.dataset.amt)));
+$('#hideBtn').addEventListener('click', confirmHide);
+$('#resetBtn').addEventListener('click', reset); $('#resetBtn2').addEventListener('click', reset);
+$$('#holdSeg button').forEach(b => b.addEventListener('click', () => setHolding(+b.dataset.hold)));
+$$('.tkr').forEach(e => { e.textContent = T; });
+setInterval(() => { if (cur !== 'home' || document.hidden) return; if (Math.random() < .35) FEES.in += 1 + Math.floor(Math.random() * 4); renderFees(); }, 1000);   // example fees trickling in
+document.addEventListener('keydown', e => { if (e.key === 'Escape'){ if (hideEl.classList.contains('on')) closeHide(); else if (sel) deselect(); } });
+
+/* ---------- boot ---------- */
+buildMap(); buildMine(); setAmt(10000); renderHome();
+const ic = $('#introCoin'), wide = matchMedia('(min-width:960px)'); let icStop = null, icYaw = .45;
+function introCoin(){
+  if (icStop){ icStop(); icStop = null; }
+  if (!ic || !wide.matches) return;
+  const ix = sizeCanvas(ic, 132, 132), paint = () => { ix.clearRect(0, 0, 132, 132); drawCoin(ix, 66, 66, 50, icYaw, -.08, 1); };
+  let t = 0; paint(); if (!reduced) icStop = addTicker(dt => { t += dt; const cyc = t % 6.5; icYaw = .45 + Math.sin(t * .9) * .4 + (cyc > 5.3 ? ioCubic((cyc - 5.3) / 1.2) * Math.PI * 2 : 0); paint(); });
+}
+introCoin(); wide.addEventListener ? wide.addEventListener('change', introCoin) : wide.addListener(introCoin);
+})();
+</script>
+
+</body>
+</html>

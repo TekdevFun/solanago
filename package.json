@@ -1,0 +1,15 @@
+{
+  "name": "solanago",
+  "version": "0.1.0",
+  "description": "SolanaGO: a real-world SOL treasure hunt funded by token trading fees",
+  "private": true,
+  "type": "module",
+  "engines": { "node": ">=22.13" },
+  "scripts": {
+    "start": "node --disable-warning=ExperimentalWarning server/index.js",
+    "dev": "node --disable-warning=ExperimentalWarning --watch server/index.js",
+    "test": "node --disable-warning=ExperimentalWarning --test \"test/*.test.js\"",
+    "check": "node --disable-warning=ExperimentalWarning scripts/check.js",
+    "keygen": "node scripts/keygen.js"
+  }
+}

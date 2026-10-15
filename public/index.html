@@ -1,0 +1,281 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>SolanaGO</title>
+<meta name="description" content="Trading fees get hidden as SOL in the real world. Walk to a drop and it is yours.">
+<meta name="theme-color" content="#f1f3f7">
+<meta property="og:title" content="SolanaGO">
+<meta property="og:description" content="Trading fees get hidden as SOL in the real world. Walk to a drop and it is yours.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="%ORIGIN%/">
+<meta property="og:image" content="%ORIGIN%/card.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="%ORIGIN%/card.jpg">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="icon" type="image/png" href="/icon-192.png">
+<link rel="apple-touch-icon" href="/icon-180.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Inter+Tight:wght@700;800&display=swap">
+<link rel="stylesheet" href="/app.css">
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <defs>
+    <linearGradient id="gBars" gradientUnits="userSpaceOnUse" x1="-.575" y1=".47" x2=".575" y2="-.48"><stop offset="0" style="stop-color:var(--coin-a)"/><stop offset=".5" style="stop-color:var(--coin-b)"/><stop offset="1" style="stop-color:var(--coin-c)"/></linearGradient>
+    <linearGradient id="gEdge" x1="0" y1="0" x2="1" y2="0"><stop offset="0" style="stop-color:var(--coin-e1)"/><stop offset=".5" style="stop-color:var(--coin-e2)"/><stop offset="1" style="stop-color:var(--coin-e3)"/></linearGradient>
+    <radialGradient id="gShine" cx=".3" cy=".2" r=".8"><stop offset="0" stop-color="#fff" stop-opacity=".2"/><stop offset=".62" stop-color="#fff" stop-opacity="0"/></radialGradient>
+    <g id="solBars" fill="url(#gBars)" stroke="url(#gBars)" stroke-width=".05" stroke-linejoin="round">
+      <path d="M-.36 -.45H.55L.36 -.264H-.55Z"/>
+      <path d="M-.55 -.093H.36L.55 .093H-.36Z"/>
+      <path d="M-.36 .264H.55L.36 .45H-.55Z"/>
+    </g>
+    <symbol id="coin" viewBox="0 0 40 43">
+      <circle cx="20" cy="23" r="19.5" fill="url(#gEdge)"/>
+      <circle cx="20" cy="20" r="19.5" style="fill:var(--coin-face)"/>
+      <circle cx="20" cy="20" r="19.5" fill="url(#gShine)"/>
+      <circle cx="20" cy="20" r="18.3" fill="none" stroke="#fff" stroke-opacity=".13" stroke-width=".9"/>
+      <use href="#solBars" transform="translate(20 20) scale(19.5)"/>
+    </symbol>
+    <symbol id="coinf" viewBox="0 0 40 40">
+      <circle cx="20" cy="20" r="20" style="fill:var(--coin-face)"/>
+      <circle cx="20" cy="20" r="20" fill="url(#gShine)"/>
+      <use href="#solBars" transform="translate(20 20) scale(20)"/>
+    </symbol>
+    <symbol id="i-x" viewBox="0 0 24 24"><path d="M6.5 6.5l11 11M17.5 6.5l-11 11"/></symbol>
+    <symbol id="i-back" viewBox="0 0 24 24"><path d="M14.5 5.5L8 12l6.5 6.5"/></symbol>
+    <symbol id="i-chev" viewBox="0 0 24 24"><path d="M9.5 5.5L16 12l-6.5 6.5"/></symbol>
+    <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+    <symbol id="i-compass" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M15.6 8.4l-2.1 5.1-5.1 2.1 2.1-5.1z"/></symbol>
+    <symbol id="i-share" viewBox="0 0 24 24"><path d="M12 14.5V4M8 7.5l4-4 4 4M6 11.5v8h12v-8"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></symbol>
+    <symbol id="i-bolt" viewBox="0 0 24 24"><path d="M13.2 2.5L5 13.5h5.6L9.8 21.5 19 10h-6z" fill="currentColor" stroke="none"/></symbol>
+    <symbol id="i-spark" viewBox="0 0 24 24"><path d="M10 4c.7 4.6 2.4 6.3 7 7-4.6.7-6.3 2.4-7 7-.7-4.6-2.4-6.3-7-7 4.6-.7 6.3-2.4 7-7zM18.5 15.5v5M16 18h5"/></symbol>
+    <symbol id="i-target" viewBox="0 0 24 24"><circle cx="12" cy="12" r="6.5"/><circle cx="12" cy="12" r="1.2" fill="currentColor"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3"/></symbol>
+    <symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 3.2l7 2.8v5.4c0 4.4-2.9 7.8-7 9.2-4.1-1.4-7-4.8-7-9.2V6z"/><path d="M9 12.2l2.2 2.2 4-4.2"/></symbol>
+    <symbol id="i-wallet" viewBox="0 0 24 24"><rect x="3.5" y="6.5" width="17" height="12.5" rx="3"/><path d="M3.5 10.5h17"/><circle cx="16.4" cy="14.8" r="1.1" fill="currentColor" stroke="none"/></symbol>
+    <symbol id="i-locate" viewBox="0 0 24 24"><path d="M20 4L4.5 10.6l6.3 2.6 2.6 6.3z"/></symbol>
+    <symbol id="i-lock" viewBox="0 0 24 24"><rect x="5" y="10.5" width="14" height="10" rx="2.5"/><path d="M8 10.5V8a4 4 0 018 0v2.5"/></symbol>
+    <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></symbol>
+  </defs>
+</svg>
+
+<div class="stage">
+  <aside class="intro">
+    <h1><span class="logo" role="img" aria-label="SolanaGO logo"></span><span>Solana<i>GO</i></span></h1>
+    <p class="lede">Trading fees get hidden as SOL in the real world. Walk to a drop and it is yours.</p>
+    <ol>
+      <li>Open this page on your phone.</li>
+      <li>Allow location, then pick a drop on the map.</li>
+      <li>Follow the compass and hold to claim when the coin appears.</li>
+    </ol>
+    <a class="ghost" href="/demo">Try the demo</a>
+    <p class="fineprint">Drops are paid in SOL from the project treasury. Not affiliated with the Solana Foundation.</p>
+  </aside>
+
+  <div class="device">
+    <div class="phone" id="phone">
+
+      <!-- HOME -->
+      <section class="screen on" id="home" aria-label="Home">
+        <div class="home-glow"></div>
+        <div class="scroll">
+          <header class="acct">
+            <b class="brand"><span class="logo" role="img" aria-label="SolanaGO logo"></span><span>Solana<i>GO</i></span></b>
+            <button class="wchip none" id="walletChip" type="button"><svg class="ico"><use href="#i-wallet"/></svg><span id="walletChipTxt">Add wallet</span></button>
+          </header>
+          <p class="banner" id="modeTag" hidden>Practice mode. Payouts are pretend until a treasury wallet is connected.</p>
+          <p class="banner" id="pauseTag" hidden>Claims are paused for a moment. Drops stay where they are.</p>
+          <button class="alert" id="alertBtn" type="button">
+            <svg class="coin" width="38"><use href="#coin"/></svg>
+            <span class="alert-t"><b id="alertTitle">Find drops near you</b><small id="alertSub">Tap to turn on location</small></span>
+            <svg class="ico"><use href="#i-chev"/></svg>
+          </button>
+          <div class="bal">
+            <span class="lbl">You've found</span>
+            <div class="bal-n"><span id="balInt">0</span><span class="dec" id="balDec">.00</span><span class="unit">SOL</span></div>
+          </div>
+          <div class="acts">
+            <button class="act" id="goHunt" type="button"><span class="act-i"><svg class="ico"><use href="#i-compass"/></svg></span><span>Find drops<small>Open the map</small></span></button>
+            <button class="act" id="goWallet" type="button"><span class="act-i"><svg class="ico"><use href="#i-wallet"/></svg></span><span>Your wallet<small id="walletSub">Where your SOL goes</small></span></button>
+          </div>
+          <h2 class="sec">Live drops</h2>
+          <div class="stack" id="batchList"><div class="list"><div class="empty">Loading drops…</div></div></div>
+          <h2 class="sec"><b>Funded by trading fees</b></h2>
+          <div class="flow">
+            <div class="rows">
+              <div class="row"><span>Trading fees collected</span><b><span id="feeIn">0</span> SOL</b></div>
+              <div class="row"><span>Hidden as drops</span><b><span id="feeOut">0</span> SOL</b></div>
+              <div class="row"><span>Claimed by hunters</span><b><span id="feeClaimed">0</span> SOL</b></div>
+            </div>
+            <div class="next" id="nextRow">
+              <svg class="ico"><use href="#i-clock"/></svg>
+              <span class="nx"><small>Next batch</small><b><span id="nextAmt">0</span> SOL so far</b></span>
+              <span class="nx nx-r" id="nextWhen" hidden><small id="nextLbl">Goes live in</small><b id="nextIn">00:00:00</b></span>
+            </div>
+            <div class="proof" id="proof" hidden></div>
+            <p class="fine">Creator fees from <i class="tkr">$SolanaGO</i> trades land in the <a id="treasuryLink" href="#" target="_blank" rel="noopener">treasury wallet</a> and are hidden as drops. Every payout above links to its transaction.</p>
+          </div>
+          <h2 class="sec">Holder perks</h2>
+          <div class="perks">
+            <div class="hold-top">
+              <div><small>Your <i class="tkr">$SolanaGO</i></small><b id="holdAmt">0</b></div>
+              <span class="tierchip" id="tierChip">Not holding</span>
+            </div>
+            <div class="perk" data-need="1"><span class="pk-i"><svg class="ico"><use href="#i-clock"/></svg></span><span class="pk-t"><b id="perk1">15 min head start</b><small>See each batch first</small></span><span class="pk-n"></span></div>
+            <div class="perk" data-need="2"><span class="pk-i"><svg class="ico"><use href="#i-spark"/></svg></span><span class="pk-t"><b>Holder-only drops</b><small>Gold pins only holders can claim</small></span><span class="pk-n"></span></div>
+            <div class="perk" data-need="3"><span class="pk-i"><svg class="ico"><use href="#i-target"/></svg></span><span class="pk-t"><b id="perk3">Claim from 50 m</b><small id="perk3s">Everyone else needs 30 m</small></span><span class="pk-n"></span></div>
+            <a class="getbtn" id="getToken" href="#" target="_blank" rel="noopener" hidden><span>Get <i class="tkr">$SolanaGO</i></span></a>
+            <p class="fine" id="perkNote">Perks follow the wallet you add here. We only read its balance.</p>
+          </div>
+          <h2 class="sec">Found <span id="foundSum"></span></h2>
+          <div class="list" id="foundList"><div class="empty">Nothing yet. Your first drop is waiting.</div></div>
+          <p class="fine">Stay aware of your surroundings and only go where the public is allowed. Drops are paid from the project treasury while it lasts. Not affiliated with the Solana Foundation. <a href="/demo">Try the demo</a></p>
+        </div>
+      </section>
+
+      <!-- MAP -->
+      <section class="screen" id="map" aria-label="Drop map" hidden>
+        <div class="tmap" id="mapWrap">
+          <div class="tiles"></div>
+          <svg class="ovl" aria-hidden="true"><g id="zones"></g><circle id="selZone" class="z-circle" r="0"/><line id="route" class="r-line" x1="0" y1="0" x2="0" y2="0" visibility="hidden"/></svg>
+          <div class="pins" id="pins"></div>
+        </div>
+        <header class="maphead">
+          <button class="rbtn" id="mapBack" type="button" aria-label="Back to home"><svg class="ico"><use href="#i-back"/></svg></button>
+          <div class="camp-pill"><svg class="coinf" width="34" height="34"><use href="#coinf"/></svg><span class="cp-t"><b id="mapTitle">Live drops</b><small id="mapSub">Looking around you</small></span></div>
+        </header>
+        <button class="mapnote" id="mapNote" type="button" hidden></button>
+        <a class="attr" id="mapAttr" href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">© OpenStreetMap</a>
+        <button class="rbtn locate" id="recenter" type="button" aria-label="Center on me"><svg class="ico"><use href="#i-locate"/></svg></button>
+        <div class="psheet" id="pinSheet" inert>
+          <div class="grab"></div>
+          <div class="ps-h">
+            <svg class="coin" width="54"><use href="#coin"/></svg>
+            <div><b id="psTitle">Drop</b><small id="psSub"></small></div>
+          </div>
+          <ul class="ps-l">
+            <li><svg class="ico"><use href="#i-spark"/></svg><span id="psLeft"></span></li>
+            <li><svg class="ico"><use href="#i-target"/></svg><span id="psReach"></span></li>
+            <li><svg class="ico"><use href="#i-shield"/></svg><span>Only ever in public places</span></li>
+          </ul>
+          <button class="cta" id="startHunt" type="button" aria-disabled="false"><svg class="ico"><use id="startIco" href="#i-compass"/></svg><span id="startLbl">Start the hunt</span></button>
+        </div>
+      </section>
+
+      <!-- HUNT -->
+      <section class="screen" id="hunt" aria-label="Hunting" hidden>
+        <header class="hhead">
+          <button class="rbtn" id="huntClose" type="button" aria-label="Stop hunting"><svg class="ico"><use href="#i-x"/></svg></button>
+          <b id="huntTitle">Hunting</b><small id="huntPlace"></small>
+        </header>
+        <div class="dialwrap">
+          <div class="needle"></div>
+          <div class="dial">
+            <svg class="bezel" id="bezel" viewBox="-125 -125 250 250" aria-hidden="true"></svg>
+            <div class="orbit" id="orbit"><span class="orb" id="orb"><svg class="coin"><use href="#coin"/></svg></span></div>
+            <div class="dist"><span id="distN">0</span><span class="m" id="distU">m</span></div>
+            <div class="warm" id="warm">Getting warmer</div>
+            <div class="hint" id="hint" aria-live="polite">Finding your direction</div>
+          </div>
+        </div>
+        <div class="mini" id="mini">
+          <div class="tmap still" id="miniMap">
+            <div class="tiles"></div>
+            <svg class="ovl" aria-hidden="true"><circle id="miniZone" class="z-circle" r="0"/></svg>
+            <div class="pins">
+              <span class="mini-coin" id="miniCoin"><svg><use href="#coinf"/></svg></span>
+              <span class="medot" id="miniMe"><i class="cone"></i><i class="dot"></i></span>
+            </div>
+          </div>
+          <a class="attr" href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">© OpenStreetMap</a>
+          <span class="chip-in" id="inCircle" hidden><svg class="coinf" width="20" height="20"><use href="#coinf"/></svg>It's in the circle</span>
+        </div>
+        <p class="note">Keep your eyes up while you walk. Your phone buzzes as you get closer, and the camera opens <span id="noteReach">30</span>&nbsp;m away.</p>
+      </section>
+
+      <!-- CAMERA -->
+      <section class="screen" id="ar" aria-label="Claim the drop" hidden>
+        <video id="cam" playsinline muted autoplay hidden></video>
+        <div class="ar-bg">
+          <i class="ar-path"></i>
+          <i class="bk" style="left:38%;top:5%;width:34px;height:34px"></i>
+          <i class="bk" style="left:74%;top:8%;width:24px;height:24px;animation-delay:-1.2s"></i>
+          <i class="bk" style="left:58%;top:13%;width:28px;height:28px;animation-delay:-2.1s"></i>
+          <i class="bk" style="left:17%;top:21%;width:22px;height:22px;animation-delay:-.6s"></i>
+          <i class="bk" style="left:9%;top:35%;width:18px;height:18px;animation-delay:-3s"></i>
+          <i class="beam"></i>
+        </div>
+        <button class="rbtn" id="arClose" type="button" aria-label="Close camera"><svg class="ico"><use href="#i-x"/></svg></button>
+        <span class="here"><i></i>You're here</span>
+        <div class="ar-stage">
+          <canvas id="arCoin" aria-hidden="true"></canvas>
+          <div class="gring"></div>
+          <i class="spk" style="left:24%;top:30%"></i>
+          <i class="spk" style="left:76%;top:38%;animation-delay:-.8s;width:7px;height:7px"></i>
+          <i class="spk" style="left:70%;top:20%;animation-delay:-1.5s;width:6px;height:6px"></i>
+          <i class="spk" style="left:29%;top:62%;animation-delay:-1.1s;width:7px;height:7px"></i>
+        </div>
+        <div class="ar-ui">
+          <b id="arTitle">Drop</b>
+          <small id="arSub"></small>
+          <button class="hold" id="holdBtn" type="button" aria-label="Hold to claim">
+            <svg class="prog" viewBox="0 0 86 86" aria-hidden="true"><circle class="trk" cx="43" cy="43" r="38"/><circle class="barc" id="holdBar" cx="43" cy="43" r="38"/></svg>
+            <span class="hold-c"><svg class="coin"><use href="#coin"/></svg></span>
+          </button>
+          <span class="hold-l" id="holdLbl" aria-live="polite">Hold to claim</span>
+        </div>
+        <div class="fsheet" id="found" inert>
+          <svg class="coin f-coin"><use href="#coin"/></svg>
+          <h2 id="fTitle">You found it</h2>
+          <p class="from" id="fFrom"></p>
+          <span class="okchip" id="fChip"><svg class="ico"><use href="#i-check"/></svg><span id="fChipTxt">In your wallet</span></span>
+          <div class="rows">
+            <div class="row"><span>Found in</span><b id="fPlace"></b></div>
+            <div class="row"><span>Paid in</span><b><svg class="ico"><use href="#i-bolt"/></svg><span id="fTime"></span></b></div>
+            <div class="row"><span>Still hidden here</span><b id="fLeft"></b></div>
+          </div>
+          <a class="tx" id="fTx" href="#" target="_blank" rel="noopener">View the transaction</a>
+          <div class="f-btns">
+            <button class="btn2" id="shareBtn" type="button"><svg class="ico"><use href="#i-share"/></svg>Share</button>
+            <button class="cta" id="keepBtn" type="button">Keep hunting</button>
+          </div>
+          <p class="f-note" id="fNote" hidden>Practice mode. No real SOL moved.</p>
+        </div>
+      </section>
+
+      <!-- WALLET -->
+      <div class="scrim" id="scrim" hidden></div>
+      <section class="sheet short" id="walletSheet" aria-label="Your wallet" inert>
+        <div class="sh-top">
+          <div class="grab"></div>
+          <button class="rbtn" id="walletClose" type="button" aria-label="Close"><svg class="ico"><use href="#i-x"/></svg></button>
+          <b>Your wallet</b>
+        </div>
+        <div class="sh-body">
+          <p class="sh-lede">Drops are paid straight to this address. You never sign anything, and we never ask for your seed phrase.</p>
+          <div class="field">
+            <label for="addr">Solana address</label>
+            <input class="input" id="addr" type="text" inputmode="text" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="Paste your address">
+            <span class="err" id="addrErr" role="alert" hidden></span>
+          </div>
+          <button class="btn2 wide" id="connectBtn" type="button" hidden><svg class="ico"><use href="#i-wallet"/></svg><span id="connectLbl">Use my wallet app</span></button>
+        </div>
+        <div class="sh-foot">
+          <button class="cta" id="saveAddr" type="button">Save address</button>
+        </div>
+      </section>
+
+      <div class="toast" id="toast" role="status"></div>
+    </div>
+  </div>
+</div>
+
+<script src="/tilemap.js"></script>
+<script src="/app.js"></script>
+</body>
+</html>

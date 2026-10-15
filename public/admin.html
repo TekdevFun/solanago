@@ -1,0 +1,215 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex">
+<title>SolanaGO admin</title>
+<link rel="icon" type="image/png" href="/icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Inter+Tight:wght@700;800&display=swap">
+<style>
+/* Layout: a working console. Map and batch form on the left, what is live and who claimed on the right. */
+:root{
+  --bg:#f1f3f7; --card:#ffffff; --well:#e9ecf2; --line:#dfe3ea;
+  --ink:#0d1220; --ink-2:#5f6877; --ink-3:#98a0ad;
+  --accent:#2d6be4; --accent-hi:#3f7df2; --accent-lo:#245cd0; --on-accent:#ffffff;
+  --good:#16894b; --good-soft:#e1f5e8; --gold-soft:#fdf2d0; --gold-ink:#7a4f00; --bad:#c2332a; --bad-soft:#fdecea;
+  --coin-a:#cf47ea; --coin-b:#6f9acd; --coin-c:#19f5a3; --map-land:#e8eaee;
+  --font-ui:"Inter",system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  --font-display:"Inter Tight","Inter",system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+}
+*,*::before,*::after{box-sizing:border-box}
+[hidden]{display:none!important}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font-ui);font-size:15px;line-height:1.4;-webkit-font-smoothing:antialiased}
+button,input,select{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+h1,h2,p{margin:0}
+.wrap{max-width:1240px;margin:0 auto;padding-block:20px 60px;padding-inline:16px}
+.top{display:flex;align-items:center;gap:12px;margin-bottom:18px;flex-wrap:wrap}
+.logo{width:36px;height:36px;border-radius:50%;background:url("/logo.webp") center/cover no-repeat;flex:none}
+.top h1{font-family:var(--font-display);font-weight:800;font-size:24px;letter-spacing:-.02em}
+.top h1 i{font-style:normal;color:var(--accent)}
+.top h1 span{font-family:var(--font-ui);font-weight:500;font-size:15px;letter-spacing:0;color:var(--ink-2);margin-left:6px}
+.badge{font-size:12px;font-weight:600;padding:5px 11px;border-radius:999px;background:var(--gold-soft);color:var(--gold-ink);white-space:nowrap}
+.badge.live{background:var(--good-soft);color:var(--good)}
+.badge.stop{background:var(--bad-soft);color:var(--bad)}
+.notice{margin:0 0 16px;padding:12px 16px;border-radius:16px;background:var(--bad-soft);color:var(--bad);font-size:14px;font-weight:500}
+.spacer{flex:1}
+@media (max-width:620px){.top .spacer{display:none}.top #lockBtn{order:1;margin-left:auto}.top .badge{order:2}.top #pauseBtn{order:3;margin-left:auto}.top .applink{order:4}}
+.card{background:var(--card);border-radius:22px;padding:18px;min-width:0;box-shadow:0 1px 2px rgba(13,18,32,.04),0 6px 18px rgba(13,18,32,.05)}
+.card h2{font-family:var(--font-display);font-weight:700;font-size:19px;letter-spacing:-.01em;margin-bottom:12px}
+.gate{max-width:420px;margin:12vh auto 0;display:grid;gap:12px}
+.gate p{color:var(--ink-2)}
+.summary{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin-bottom:16px}
+.stat{background:var(--card);border-radius:18px;padding:14px 16px;display:grid;grid-template-columns:minmax(0,1fr);gap:2px;min-width:0;box-shadow:0 1px 2px rgba(13,18,32,.04),0 6px 18px rgba(13,18,32,.05)}
+.stat small{font-size:12.5px;color:var(--ink-2)}
+.stat b{font-family:var(--font-display);font-weight:700;font-size:22px;letter-spacing:-.01em;font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.stat b i{font-style:normal;font-family:var(--font-ui);font-size:13px;font-weight:600;color:var(--ink-2);margin-left:4px}
+.stat .mono{font-family:var(--font-ui);font-size:14px;font-weight:600;letter-spacing:0}
+.stat .addr{display:flex;align-items:center;gap:8px;min-height:27px}
+.stat .addr a{color:inherit;text-decoration:none;overflow:hidden;text-overflow:ellipsis}
+.stat .addr a[href]:hover{text-decoration:underline}
+.copy{height:26px;padding:0 10px;border:0;border-radius:13px;background:var(--well);font-size:12px;font-weight:600;flex:none}
+.cols{display:grid;grid-template-columns:minmax(0,1fr);gap:16px}
+@media (min-width:980px){.cols{grid-template-columns:minmax(0,1.05fr) minmax(0,1fr)}}
+.col{display:grid;grid-template-columns:minmax(0,1fr);gap:16px;align-content:start;min-width:0}
+.tmap{position:relative;overflow:hidden;overflow:clip;background:var(--map-land);touch-action:none;cursor:crosshair;border-radius:16px;height:340px}
+.tmap .tiles{position:absolute;left:0;top:0;width:0;height:0;filter:saturate(.5) brightness(1.04) contrast(.96)}
+.tmap img.tile{position:absolute;left:0;top:0;width:256px;height:256px;max-width:none;transform-origin:0 0;opacity:0;transition:opacity .25s;pointer-events:none}
+.tmap img.tile.ok{opacity:1}
+.tmap img.tile.old{z-index:-1}
+.tmap svg.ovl{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;overflow:visible}
+.z-pick{fill:rgba(45,107,228,.16);stroke:var(--accent);stroke-width:2}
+.z-live{fill:rgba(207,71,234,.08);stroke:var(--coin-a);stroke-opacity:.7;stroke-width:1.5;stroke-dasharray:6 6}
+.dot{position:absolute;left:0;top:0;width:14px;height:14px;margin:-7px 0 0 -7px;border-radius:50%;background:var(--accent);border:3px solid #fff;box-shadow:0 2px 6px rgba(13,18,32,.3);pointer-events:none}
+.attr{position:absolute;left:8px;bottom:6px;font-size:10px;line-height:1;color:var(--ink-2);background:rgba(255,255,255,.8);padding:3px 7px;border-radius:8px;text-decoration:none}
+.locbtn{position:absolute;right:10px;top:10px;height:34px;padding:0 12px;border:0;border-radius:17px;background:var(--card);font-weight:600;font-size:13px;box-shadow:0 2px 8px rgba(13,18,32,.16)}
+.hint{font-size:13px;color:var(--ink-2);margin:10px 2px 14px}
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;align-items:end}
+@media (min-width:980px){.grid.three{grid-template-columns:repeat(3,minmax(0,1fr))}}
+.grid .full{grid-column:1/-1}
+.field{display:grid;gap:5px;min-width:0}
+.field label,.field .lab{font-size:12.5px;font-weight:600;color:var(--ink-2)}
+.input{width:100%;height:44px;border-radius:13px;border:1.5px solid var(--line);background:var(--card);padding:0 12px;min-width:0}
+.input:focus{outline:none;border-color:var(--accent)}
+input[type=range]{width:100%;accent-color:var(--accent)}
+.check{display:flex;align-items:center;gap:8px;height:44px;font-weight:500}
+.check input{width:18px;height:18px;accent-color:var(--accent)}
+.preview{margin:14px 0;padding:11px 13px;border-radius:14px;background:var(--well);font-size:14px;color:var(--ink-2)}
+.preview b{color:var(--ink)}
+.cta{height:48px;padding:0 22px;border:0;border-radius:24px;background:linear-gradient(var(--accent-hi),var(--accent-lo));color:var(--on-accent);font-weight:600;font-size:15px;box-shadow:0 8px 20px rgba(45,107,228,.28)}
+.cta:disabled{opacity:.5;cursor:default}
+.btn{height:36px;padding:0 14px;border:0;border-radius:18px;background:var(--well);font-weight:600;font-size:13.5px;white-space:nowrap}
+.btn.danger{background:var(--bad-soft);color:var(--bad)}
+.msg{margin-top:10px;font-size:14px;font-weight:500}
+.msg.ok{color:var(--good)}
+.msg.bad,.err{color:var(--bad)}
+.batch{padding:12px 0;display:grid;grid-template-columns:minmax(0,1fr);gap:6px}
+.batch + .batch{border-top:1px solid var(--line)}
+.b-top{display:flex;align-items:center;flex-wrap:wrap;gap:6px 10px}
+.b-top b{font-weight:600;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.b-top .state{font-size:11.5px;font-weight:600;padding:3px 9px;border-radius:999px;background:var(--well);color:var(--ink-2);white-space:nowrap}
+.b-top .state.live{background:var(--good-soft);color:var(--good)}
+.b-top .state.soon{background:var(--gold-soft);color:var(--gold-ink)}
+.b-sub{font-size:13px;color:var(--ink-2)}
+.bar{height:6px;border-radius:3px;background:var(--well);overflow:hidden}
+.bar i{display:block;height:100%;border-radius:3px;background:linear-gradient(90deg,var(--coin-a),var(--coin-b),var(--coin-c))}
+.confirm{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:13.5px;color:var(--ink-2)}
+.empty{color:var(--ink-2);font-size:14px;padding:6px 0}
+.areas{display:grid;grid-template-columns:minmax(0,1fr);gap:8px;margin:10px 0}
+.area{display:flex;align-items:center;gap:10px;padding:8px 12px;border-radius:13px;background:var(--well);font-size:14px}
+.area span{flex:1;min-width:0}
+.area small{color:var(--ink-2)}
+.tablewrap{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:13px;font-variant-numeric:tabular-nums}
+th{text-align:left;font-weight:600;color:var(--ink-2);padding:6px 10px 8px 0;white-space:nowrap}
+td{padding:7px 10px 7px 0;border-top:1px solid var(--line);white-space:nowrap}
+td.paid{color:var(--good);font-weight:600}td.failed{color:var(--bad);font-weight:600}td.paying{color:var(--gold-ink);font-weight:600}
+a{color:var(--accent)}
+</style>
+</head>
+<body>
+<main class="wrap">
+  <header class="top">
+    <span class="logo" role="img" aria-label="SolanaGO logo"></span>
+    <h1>Solana<i>GO</i><span>admin</span></h1>
+    <span class="badge" id="modeBadge" hidden></span>
+    <span class="badge stop" id="pauseBadge" hidden>Claims are paused</span>
+    <span class="spacer"></span>
+    <button class="btn danger" id="pauseBtn" type="button" hidden>Pause claims</button>
+    <a href="/" class="btn applink" style="display:inline-flex;align-items:center;text-decoration:none;color:inherit">Open the app</a>
+    <button class="btn" id="lockBtn" type="button" hidden>Lock</button>
+  </header>
+
+  <section class="card gate" id="gate">
+    <h2>Unlock the console</h2>
+    <p>Enter the admin password. It is the ADMIN_TOKEN value set on the server.</p>
+    <form id="gateForm" class="field">
+      <label for="pw">Admin password</label>
+      <input class="input" id="pw" type="password" autocomplete="current-password">
+      <button class="cta" type="submit" style="margin-top:8px">Unlock</button>
+    </form>
+    <p class="err" id="gateErr" role="alert" hidden></p>
+  </section>
+
+  <div id="app" hidden>
+    <p class="notice" id="netWarn" role="alert" hidden></p>
+    <section class="summary" aria-label="Treasury">
+      <div class="stat"><small>Treasury wallet</small><span class="addr"><a class="mono" id="sAddr" target="_blank" rel="noopener">…</a><button class="copy" id="copyAddr" type="button">Copy</button></span></div>
+      <div class="stat"><small>In the wallet</small><b><span id="sBal">0</span><i>SOL</i></b></div>
+      <div class="stat"><small>Hidden in live drops</small><b><span id="sOut">0</span><i>SOL</i></b></div>
+      <div class="stat"><small>Free to hide</small><b><span id="sFree">0</span><i>SOL</i></b></div>
+    </section>
+
+    <div class="cols">
+      <div class="col">
+        <section class="card">
+          <h2>Hide a batch</h2>
+          <div class="tmap" id="pick">
+            <div class="tiles"></div>
+            <svg class="ovl" aria-hidden="true"><g id="liveZones"></g><circle id="pickCircle" class="z-pick" r="0"/></svg>
+            <span class="dot" id="pickDot"></span>
+            <a class="attr" id="attr" href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">© OpenStreetMap</a>
+            <button class="locbtn" id="hereBtn" type="button">Go to my location</button>
+          </div>
+          <p class="hint">Tap the map to set the centre of the batch. Keep the circle over places the public can walk: parks, squares, pedestrian streets. Drops land at random inside it.</p>
+          <div class="grid">
+            <div class="field"><label for="fName">Name shown in the app</label><input class="input" id="fName" value="Fee drop · Tokyo" maxlength="60"></div>
+            <div class="field"><label for="fArea">Place name</label><input class="input" id="fArea" value="Yoyogi Park" maxlength="40"></div>
+            <div class="field"><label for="fLat">Latitude</label><input class="input" id="fLat" inputmode="decimal"></div>
+            <div class="field"><label for="fLng">Longitude</label><input class="input" id="fLng" inputmode="decimal"></div>
+            <div class="field full"><label for="fRadius">Radius: <span id="radiusOut">150</span> m</label><input id="fRadius" type="range" min="20" max="2000" step="10" value="150"></div>
+            <div class="field"><label for="fSol">Amount to hide (SOL)</label><input class="input" id="fSol" inputmode="decimal" value="5"></div>
+            <div class="field"><label for="fGold">Holder-only share: <span id="goldOut">20</span>%</label><input id="fGold" type="range" min="0" max="60" step="5" value="20"></div>
+            <div class="field"><label for="fStart">Starts</label><select class="input" id="fStart"><option value="now">Now</option><option value="later">At a set time</option></select></div>
+            <div class="field" id="fAtWrap" hidden><label for="fAt">Start time</label><input class="input" id="fAt" type="datetime-local"></div>
+            <div class="field"><label for="fHours">Runs for (hours)</label><input class="input" id="fHours" inputmode="decimal" value="6"></div>
+            <div class="field"><label for="fEarly">Holder head start (min)</label><input class="input" id="fEarly" inputmode="numeric" value="15"></div>
+            <div class="field"><span class="lab">Limit</span><label class="check"><input type="checkbox" id="fOne" checked> One drop per person</label></div>
+          </div>
+          <div class="preview" id="preview" aria-live="polite">Enter an amount to see the split.</div>
+          <button class="cta" id="hideBtn" type="button">Hide batch</button>
+          <p class="msg" id="formMsg" role="status" hidden></p>
+        </section>
+      </div>
+
+      <div class="col">
+        <section class="card">
+          <h2>Batches</h2>
+          <div id="batches"><p class="empty">Nothing hidden yet.</p></div>
+        </section>
+        <section class="card">
+          <h2>Fee drops on a schedule</h2>
+          <p class="hint" style="margin-top:0">On each run, whatever is free in the treasury is split across these places and hidden. Holders see it first.</p>
+          <div class="grid three">
+            <div class="field"><span class="lab">Schedule</span><label class="check"><input type="checkbox" id="aOn"> Switched on</label></div>
+            <div class="field"><label for="aEvery">Every (hours)</label><input class="input" id="aEvery" inputmode="decimal" value="6"></div>
+            <div class="field"><label for="aHours">Each runs for (hours)</label><input class="input" id="aHours" inputmode="decimal" value="6"></div>
+            <div class="field"><label for="aMin">Skip if under (SOL)</label><input class="input" id="aMin" inputmode="decimal" value="1"></div>
+            <div class="field"><label for="aMax">At most per run (SOL)</label><input class="input" id="aMax" inputmode="decimal" value="50"></div>
+            <div class="field"><label for="aGold">Holder-only share (%)</label><input class="input" id="aGold" inputmode="numeric" value="20"></div>
+          </div>
+          <div class="areas" id="areas"></div>
+          <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+            <button class="btn" id="addArea" type="button">Add the circle on the map as a place</button>
+            <button class="cta" id="saveAuto" type="button" style="height:40px">Save schedule</button>
+          </div>
+          <p class="msg" id="autoMsg" role="status" hidden></p>
+        </section>
+        <section class="card">
+          <h2>Recent claims</h2>
+          <p class="hint" style="margin-top:0">The same phone or network code next to many different wallets usually means one person collecting for several.</p>
+          <div class="tablewrap"><table><thead><tr><th>When</th><th>Wallet</th><th>SOL</th><th>From spot</th><th>GPS ±</th><th>Status</th><th>Phone</th><th>Network</th></tr></thead><tbody id="claims"><tr><td colspan="8" class="empty">No claims yet.</td></tr></tbody></table></div>
+        </section>
+      </div>
+    </div>
+  </div>
+</main>
+
+<script src="/tilemap.js"></script>
+<script src="/admin.js"></script>
+</body>
+</html>
