@@ -15,6 +15,7 @@
 <meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:image" content="%ORIGIN%/card.jpg">
+<meta name="twitter:site" content="%X_SITE%">
 <link rel="manifest" href="/manifest.webmanifest">
 <link rel="icon" type="image/png" href="/icon-192.png">
 <link rel="apple-touch-icon" href="/icon-180.png">
@@ -73,7 +74,7 @@
       <li>Allow location, then pick a drop on the map.</li>
       <li>Follow the compass and hold to claim when the coin appears.</li>
     </ol>
-    <a class="ghost" href="/demo">Try the demo</a>
+    <div class="introlinks"><a class="ghost" href="/demo">Try the demo</a><a class="ghost xlink" id="introX" href="#" target="_blank" rel="noopener" hidden>Follow on X</a><a class="ghost" id="introGit" href="#" target="_blank" rel="noopener" hidden>Code on GitHub</a></div>
     <p class="fineprint">Drops are paid in SOL from the project treasury. Not affiliated with the Solana Foundation.</p>
   </aside>
 
@@ -130,11 +131,12 @@
             <div class="perk" data-need="2"><span class="pk-i"><svg class="ico"><use href="#i-spark"/></svg></span><span class="pk-t"><b>Holder-only drops</b><small>Gold pins only holders can claim</small></span><span class="pk-n"></span></div>
             <div class="perk" data-need="3"><span class="pk-i"><svg class="ico"><use href="#i-target"/></svg></span><span class="pk-t"><b id="perk3">Claim from 50 m</b><small id="perk3s">Everyone else needs 30 m</small></span><span class="pk-n"></span></div>
             <a class="getbtn" id="getToken" href="#" target="_blank" rel="noopener" hidden><span>Get <i class="tkr">$SolanaGO</i></span></a>
+            <a class="getbtn xbtn" id="followX" href="#" target="_blank" rel="noopener" hidden><span>Follow <b id="followXName">@SolanaGO_</b> on X</span></a>
             <p class="fine" id="perkNote">Perks follow the wallet you add here. We only read its balance.</p>
           </div>
           <h2 class="sec">Found <span id="foundSum"></span></h2>
           <div class="list" id="foundList"><div class="empty">Nothing yet. Your first drop is waiting.</div></div>
-          <p class="fine">Stay aware of your surroundings and only go where the public is allowed. Drops are paid from the project treasury while it lasts. Not affiliated with the Solana Foundation. <a href="/demo">Try the demo</a></p>
+          <p class="fine">Stay aware of your surroundings and only go where the public is allowed. Drops are paid from the project treasury while it lasts. Not affiliated with the Solana Foundation. <a href="/demo">Try the demo</a><span id="gitNote" hidden> · <a id="gitLink" href="#" target="_blank" rel="noopener">Code on GitHub</a></span></p>
         </div>
       </section>
 

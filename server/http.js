@@ -281,6 +281,9 @@ export function createServer({ game, cfg, log = console }) {
     ticker: cfg.tokenTicker,
     mint: cfg.tokenMint,
     tokenUrl: cfg.tokenUrl || (cfg.tokenMint ? `https://pump.fun/coin/${cfg.tokenMint}` : ''),
+    xHandle: cfg.xHandle,
+    xUrl: cfg.xHandle ? `https://x.com/${cfg.xHandle}` : '',
+    githubUrl: cfg.githubUrl,
     tierLevels: cfg.tierLevels,
     earlyMin: cfg.earlyMin,
     goldTier: cfg.goldTier,
@@ -423,7 +426,7 @@ export function createServer({ game, cfg, log = console }) {
           return res.end();
         }
         // Link previews on X and Telegram need full addresses, so pages can say %ORIGIN% and get the site's own.
-        const raw = ext === '.html' ? Buffer.from(data.toString('utf8').replaceAll('%ORIGIN%', cfg.publicUrl)) : data;
+        const raw = ext === '.html' ? Buffer.from(data.toString('utf8').replaceAll('%ORIGIN%', cfg.publicUrl).replaceAll('%X_SITE%', cfg.xHandle ? `@${cfg.xHandle}` : '')) : data;
         const entry = { mtimeMs: stat.mtimeMs, raw, gzip: null };
         if (fileCache.size > 300) fileCache.clear();
         fileCache.set(file, entry);

@@ -415,4 +415,7 @@ a{color:inherit}
 .sh-top .rbtn{background:var(--well)}
 .ar-bg{background:radial-gradient(62% 30% at 50% 45%,rgba(120,190,120,.5),rgba(120,190,120,0) 72%),linear-gradient(180deg,var(--ar-top) 0%,#1c3b27 22%,var(--ar-mid) 46%,#275035 66%,var(--ar-low) 100%)}
 .ar-path{opacity:.45}
+.introlinks{display:flex;gap:10px;flex-wrap:wrap}
+.xbtn{margin-top:-2px;background:var(--well);border:1px solid var(--line)}
+.xbtn b{font-weight:700}
 

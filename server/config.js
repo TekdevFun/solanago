@@ -47,6 +47,14 @@ function proxyHops(value) {
   throw new Error('TRUST_PROXY must be auto, 0, or the number of proxies in front of the app');
 }
 
+/** An X (Twitter) handle, with or without the @. Anything that is not one is refused rather than shown. */
+function xHandle(value) {
+  const raw = String(value || '').trim().replace(/^@/, '').replace(/^https?:\/\/(www\.)?(x|twitter)\.com\//i, '').replace(/\/.*$/, '');
+  if (!raw) return '';
+  if (!/^[A-Za-z0-9_]{1,15}$/.test(raw)) throw new Error('X_HANDLE must be an X username such as @SolanaGO_');
+  return raw;
+}
+
 /** PUBLIC_URL ends up inside pages, so only a plain web address is accepted. */
 function siteOrigin(value) {
   const raw = String(value || '').trim();
@@ -108,6 +116,8 @@ export function loadConfig(env = process.env) {
     tokenTicker: env.TOKEN_TICKER || 'SolanaGO',
     tokenMint: env.TOKEN_MINT || '',
     tokenUrl: webLink(env.TOKEN_URL, '', 'TOKEN_URL'),
+    xHandle: xHandle(env.X_HANDLE === undefined ? 'SolanaGO_' : env.X_HANDLE), // the project's X account, shown as a link; empty hides it
+    githubUrl: webLink(env.GITHUB_URL, '', 'GITHUB_URL'), // a "Code on GitHub" link; empty (the default) shows none
     tierLevels, // holdings needed for tier 1, 2, 3
     earlyMin: num('EARLY_ACCESS_MIN', 15), // tier 1: minutes of head start
     goldTier: 2, // tier needed for holder-only drops

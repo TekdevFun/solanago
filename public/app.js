@@ -246,6 +246,10 @@ function renderPerks() {
   $('#perk1').textContent = `${c.earlyMin} min head start`; $('#perk3').textContent = `Claim from ${c.reachTopM} m`; $('#perk3s').textContent = `Everyone else needs ${c.reachM} m`;
   $$('.perk').forEach(p => { const need = +p.dataset.need, on = t >= need; p.classList.toggle('on', on); $('.pk-n', p).textContent = on ? 'Unlocked' : tk(c.tierLevels[need - 1]) + '+'; });
   const get = $('#getToken'); get.hidden = !c.tokenUrl; if (c.tokenUrl) get.href = c.tokenUrl;
+  for (const id of ['#followX', '#introX']) { const x = $(id); if (!x) continue; x.hidden = !c.xUrl; if (c.xUrl) x.href = c.xUrl; }
+  if (c.xHandle) $('#followXName').textContent = '@' + c.xHandle;
+  for (const id of ['#introGit', '#gitNote']) { const g = $(id); if (!g) continue; g.hidden = !c.githubUrl; }
+  if (c.githubUrl) { $('#introGit').href = c.githubUrl; $('#gitLink').href = c.githubUrl; }
   $('#perkNote').textContent = !c.mint ? `${T()} is not live yet. Perks switch on when it launches.` : address ? 'Perks follow the wallet you added. We only read its balance.' : 'Add your wallet to see your perks. We only read its balance.';
 }
 function renderFound() {

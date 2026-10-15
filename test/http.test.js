@@ -155,6 +155,10 @@ test('the public API tells the app what it needs and nothing private', async () 
     assert.equal(config.json.practice, true);
     assert.deepEqual(config.json.tierLevels, [100000, 1000000, 5000000]);
     assert.equal(config.json.tokenUrl, `https://pump.fun/coin/${app.cfg.tokenMint}`);
+    assert.deepEqual([config.json.xHandle, config.json.xUrl, config.json.githubUrl], ['SolanaGO_', 'https://x.com/SolanaGO_', ''], 'the project links, as shipped: X, and no code link');
+    assert.equal((await startApp({ env: { GITHUB_URL: 'https://github.com/example/solanago' } }).then(async (a) => { const u = (await a.call('/api/config')).json.githubUrl; await a.close(); return u; })), 'https://github.com/example/solanago', 'and a code link can be switched on');
+    assert.throws(() => loadConfig({ GITHUB_URL: 'javascript:alert(1)' }), /GITHUB_URL/);
+    assert.match((await app.call('/')).text, /<meta name="twitter:site" content="@SolanaGO_">/);
     assert.equal(config.headers.get('cache-control'), 'no-store');
     const stats = await app.call('/api/stats');
     assert.equal(stats.json.feesIn, 20 * SOL);
@@ -797,6 +801,20 @@ test('the admin console can fetch the world list and a name for a spot', async (
   } finally {
     globalThis.fetch = realFetch;
     await app.close();
+  }
+});
+
+test('the X account is a setting: any way of writing it, or none at all', async () => {
+  for (const [given, handle] of [['@SolanaGO_', 'SolanaGO_'], ['SolanaGO_', 'SolanaGO_'], ['https://x.com/SolanaGO_', 'SolanaGO_'], ['https://twitter.com/SolanaGO_/', 'SolanaGO_'], ['', '']]) {
+    assert.equal(loadConfig({ X_HANDLE: given }).xHandle, handle, JSON.stringify(given));
+  }
+  for (const bad of ['@Solana GO', 'way_too_long_for_a_handle', '<script>']) assert.throws(() => loadConfig({ X_HANDLE: bad }), /X_HANDLE/, bad);
+  const none = await startApp({ env: { X_HANDLE: '' } });
+  try {
+    assert.deepEqual([(await none.call('/api/config')).json.xUrl, (await none.call('/api/config')).json.xHandle], ['', '']);
+    assert.match((await none.call('/')).text, /<meta name="twitter:site" content="">/);
+  } finally {
+    await none.close();
   }
 });
 

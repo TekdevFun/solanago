@@ -4,7 +4,7 @@ Real SOL, hidden in the real world. Trading fees from the $SolanaGO coin arrive 
 
 This folder is the whole product: the app people open on their phones, the admin console you hide drops from, and the server behind both. There are no packages to install.
 
-**Status.** Everything here has been run end to end on a test bench: a simulated phone walking to a drop, a pretend Solana node that checks every transaction's signature and contents, and 87 automated tests. The payout code then went through five rounds of independent review whose only job was to break it; what they found is fixed, and each fix has a test. It has **not** yet been run with real SOL on the real network, or on physical phones. Step 6 below is that test. It moves 0.05 SOL from the treasury to a wallet of your own, so all it costs is the network fee.
+**Status.** Everything here has been run end to end on a test bench: a simulated phone walking to a drop, a pretend Solana node that checks every transaction's signature and contents, and 88 automated tests. The payout code then went through five rounds of independent review whose only job was to break it; what they found is fixed, and each fix has a test. It has **not** yet been run with real SOL on the real network, or on physical phones. Step 6 below is that test. It moves 0.05 SOL from the treasury to a wallet of your own, so all it costs is the network fee.
 
 ## What is in the folder
 
@@ -83,6 +83,8 @@ Settings to enter on the host:
 | `PUBLIC_URL` | Your site's address, for example `https://solanago.app` |
 | `MAP_TILE_URL`, `MAP_ATTRIBUTION`, `MAP_ATTRIBUTION_URL` | From step 3 |
 | `TOKEN_MINT` | Leave empty until the coin exists (step 7) |
+| `X_HANDLE` | The project's X account, shown as a Follow link (`@SolanaGO_` out of the box; empty for none) |
+| `GITHUB_URL` | A "Code on GitHub" link, if you ever make the repository public (none out of the box) |
 
 Everything else has a sensible default. The full list is in `.env.example`.
 
@@ -222,7 +224,7 @@ No dependencies and no build step: Node 22.13+ with its built-in `http`, `sqlite
 ```
 npm start         run the server (reads .env if present)
 npm run dev       the same, restarting on changes
-npm test          87 tests: game rules, transaction encoding, HTTP API
+npm test          88 tests: game rules, transaction encoding, HTTP API
 npm run check     check settings, RPC, wallet and coin without moving money
 npm run keygen    print a new wallet
 ```
